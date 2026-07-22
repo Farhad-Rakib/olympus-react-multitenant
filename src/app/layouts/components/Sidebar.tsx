@@ -47,12 +47,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const displayTitle = siteTitle || AppConfig.app.name;
 
-  const isSuperAdmin = tokenPayload?.role === 'SuperAdmin' ||
-    tokenPayload?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] === 'SuperAdmin';
+  const isPlatformSuperAdmin = tokenPayload?.platform_admin === 'true';
 
   const { data: menuItems = [] } = useQuery({
-    queryKey: ['menu', isSuperAdmin ? 'all' : 'filtered'],
-    queryFn: () => isSuperAdmin ? menuApi.getAllMenuItems() : menuApi.getMenuItems(),
+    queryKey: ['menu', isPlatformSuperAdmin ? 'all' : 'filtered'],
+    queryFn: () => isPlatformSuperAdmin ? menuApi.getAllMenuItems() : menuApi.getMenuItems(),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
