@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Ban, Blocks } from 'lucide-react';
+import { Pencil, Ban, Blocks, Rocket, PackageCheck } from 'lucide-react';
 import { DataTable, Column, RowAction } from '../../../components/table/DataTable';
 import { ConfirmDialog } from '../../../components/ui/Dialog/ConfirmDialog';
 import { Modal } from '../../../components/ui/Modal/Modal';
@@ -8,12 +8,14 @@ import { DynamicForm, FormField } from '../../../components/form/DynamicForm';
 import { toast } from '../../../components/ui/Toast/toast.store';
 import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
+import { subscriptionPlanApi } from '../../subscription-plans/pages/SubscriptionPlansPage';
 
 interface TenantDto {
   id: number;
   slug: string;
   name: string;
   isActive: boolean;
+  subscriptionPlanId: number | null;
 }
 
 interface ModuleToggleDto {
@@ -55,6 +57,12 @@ class TenantApi extends BaseRepository {
   async disableModule(tenantId: number, moduleId: number): Promise<void> {
     await this.delete<any>(`/${tenantId}/modules/${moduleId}`);
   }
+  async provision(tenantId: number, subscriptionPlanId: number | null): Promise<void> {
+    await this.post<any>(`/${tenantId}/provision`, { subscriptionPlanId });
+  }
+  async assignSubscriptionPlan(tenantId: number, subscriptionPlanId: number): Promise<void> {
+    await this.post<any>(`/${tenantId}/subscription-plan`, { subscriptionPlanId });
+  }
 }
 
 const tenantApi = new TenantApi();
@@ -85,11 +93,22 @@ export const TenantsPage: React.FC = () => {
   const [disableTenantId, setDisableTenantId] = useState<number | null>(null);
   const [modulesTenant, setModulesTenant] = useState<TenantDto | null>(null);
   const [pendingModuleId, setPendingModuleId] = useState<number | null>(null);
+  const [provisionTenant, setProvisionTenant] = useState<TenantDto | null>(null);
+  const [provisionPlanId, setProvisionPlanId] = useState<string>('');
+  const [assignPlanTenant, setAssignPlanTenant] = useState<TenantDto | null>(null);
+  const [assignPlanId, setAssignPlanId] = useState<string>('');
 
   const { data: tenants = [], isLoading, error, refetch } = useQuery({
     queryKey: ['tenants'],
     queryFn: () => tenantApi.getAll(),
   });
+
+  const { data: subscriptionPlans = [] } = useQuery({
+    queryKey: ['subscription-plans'],
+    queryFn: () => subscriptionPlanApi.getAll(),
+  });
+
+  const planNameById = new Map(subscriptionPlans.map((plan) => [plan.id, plan.name]));
 
   const { data: modules = [], isLoading: loadingModules } = useQuery({
     queryKey: ['tenant-modules', modulesTenant?.id],
@@ -136,6 +155,32 @@ export const TenantsPage: React.FC = () => {
     onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to disable tenant'),
   });
 
+  const provisionMutation = useMutation({
+    mutationFn: ({ id, subscriptionPlanId }: { id: number; subscriptionPlanId: number | null }) =>
+      tenantApi.provision(id, subscriptionPlanId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-modules'] });
+      toast.success('Tenant provisioned successfully');
+      setProvisionTenant(null);
+      setProvisionPlanId('');
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to provision tenant'),
+  });
+
+  const assignPlanMutation = useMutation({
+    mutationFn: ({ id, subscriptionPlanId }: { id: number; subscriptionPlanId: number }) =>
+      tenantApi.assignSubscriptionPlan(id, subscriptionPlanId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-modules'] });
+      toast.success('Subscription plan assigned successfully');
+      setAssignPlanTenant(null);
+      setAssignPlanId('');
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to assign subscription plan'),
+  });
+
   const getStatusBadge = (isActive: boolean) => (
     <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${
       isActive
@@ -150,12 +195,30 @@ export const TenantsPage: React.FC = () => {
     { key: 'id', label: 'ID', width: '80px' },
     { key: 'slug', label: 'Slug', sortable: true },
     { key: 'name', label: 'Name', sortable: true },
+    {
+      key: 'subscriptionPlanId',
+      label: 'Plan',
+      render: (_, tenant) =>
+        tenant.subscriptionPlanId !== null ? (planNameById.get(tenant.subscriptionPlanId) ?? '—') : '—',
+    },
     { key: 'isActive', label: 'Status', sortable: true, render: (_, tenant) => getStatusBadge(tenant.isActive) },
   ];
 
   const rowActions: RowAction<TenantDto>[] = [
     { icon: Pencil, label: 'Edit', onClick: (t) => setEditTenant(t), variant: 'primary' },
     { icon: Blocks, label: 'Modules', onClick: (t) => setModulesTenant(t), variant: 'secondary' },
+    {
+      icon: Rocket,
+      label: 'Provision',
+      onClick: (t) => { setProvisionTenant(t); setProvisionPlanId(t.subscriptionPlanId ? String(t.subscriptionPlanId) : ''); },
+      variant: 'secondary',
+    },
+    {
+      icon: PackageCheck,
+      label: 'Assign Plan',
+      onClick: (t) => { setAssignPlanTenant(t); setAssignPlanId(t.subscriptionPlanId ? String(t.subscriptionPlanId) : ''); },
+      variant: 'secondary',
+    },
     { icon: Ban, label: 'Disable', onClick: (t) => setDisableTenantId(t.id), variant: 'danger', show: (t) => t.isActive },
   ];
 
@@ -251,6 +314,108 @@ export const TenantsPage: React.FC = () => {
             ))}
           </div>
         )}
+      </Modal>
+
+      <Modal
+        isOpen={provisionTenant !== null}
+        onClose={() => setProvisionTenant(null)}
+        title={`Provision "${provisionTenant?.name ?? ''}"`}
+        size="md"
+      >
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Seeds default roles, menus and an admin user for this tenant. Safe to re-run. Optionally pick a
+          subscription plan to entitle its modules at the same time; leave blank to entitle only the Core module.
+        </p>
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subscription Plan</label>
+            <select
+              value={provisionPlanId}
+              onChange={(e) => setProvisionPlanId(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">No plan (Core module only)</option>
+              {subscriptionPlans.map((plan) => (
+                <option key={plan.id} value={plan.id}>{plan.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              type="button"
+              onClick={() => setProvisionTenant(null)}
+              disabled={provisionMutation.isPending}
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={provisionMutation.isPending}
+              onClick={() =>
+                provisionTenant &&
+                provisionMutation.mutate({
+                  id: provisionTenant.id,
+                  subscriptionPlanId: provisionPlanId ? Number(provisionPlanId) : null,
+                })
+              }
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              Provision
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={assignPlanTenant !== null}
+        onClose={() => setAssignPlanTenant(null)}
+        title={`Assign Subscription Plan to "${assignPlanTenant?.name ?? ''}"`}
+        size="md"
+      >
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Resyncs this tenant's modules to exactly match the selected plan (adds and removes as needed; Core is
+          always kept) and updates its user limit. For an already-provisioned tenant changing plans.
+        </p>
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Subscription Plan<span className="text-red-500 ml-1">*</span>
+            </label>
+            <select
+              value={assignPlanId}
+              onChange={(e) => setAssignPlanId(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select a plan</option>
+              {subscriptionPlans.map((plan) => (
+                <option key={plan.id} value={plan.id}>{plan.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              type="button"
+              onClick={() => setAssignPlanTenant(null)}
+              disabled={assignPlanMutation.isPending}
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={assignPlanMutation.isPending || !assignPlanId}
+              onClick={() =>
+                assignPlanTenant &&
+                assignPlanId &&
+                assignPlanMutation.mutate({ id: assignPlanTenant.id, subscriptionPlanId: Number(assignPlanId) })
+              }
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              Assign Plan
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

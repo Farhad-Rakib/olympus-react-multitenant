@@ -7,6 +7,7 @@ import { DashboardPage } from '../../features/dashboard/pages/DashboardPage';
 import { UsersPage } from '../../features/users/pages/UsersPage';
 import { RolesPage } from '../../features/roles/pages/RolesPage';
 import { TenantsPage } from '../../features/tenants/pages/TenantsPage';
+import { SubscriptionPlansPage } from '../../features/subscription-plans/pages/SubscriptionPlansPage';
 import { PermissionsPage } from '../../features/permissions/pages/PermissionsPage';
 import { RolePermissionsPage } from '../../features/role-permissions/pages/RolePermissionsPage';
 import { UserRolesPage } from '../../features/user-roles/pages/UserRolesPage';
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
       { path: 'users', element: <UsersPage /> },
       { path: 'roles', element: <RolesPage /> },
       { path: 'tenants', element: <TenantsPage /> },
+      { path: 'subscription-plans', element: <SubscriptionPlansPage /> },
       { path: 'permissions', element: <PermissionsPage /> },
       { path: 'roles/permissions', element: <RolePermissionsPage /> },
       { path: 'users/roles', element: <UserRolesPage /> },
