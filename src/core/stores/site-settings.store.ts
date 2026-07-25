@@ -9,20 +9,33 @@ export interface SiteSettingEntry {
 
 interface SiteSettingsState {
   siteTitle: string;
+  logoUrl: string;
+  tagline: string;
   settings: SiteSettingEntry[];
   setSiteTitle: (title: string) => void;
+  setBranding: (branding: { title: string | null; logoUrl: string | null; tagline: string | null }) => void;
   setSettings: (settings: SiteSettingEntry[]) => void;
   getSettingValue: (key: string) => string | null;
 }
 
 export const useSiteSettingsStore = create<SiteSettingsState>()((set, get) => ({
   siteTitle: '',
+  logoUrl: '',
+  tagline: '',
   settings: [],
   setSiteTitle: (title) => {
     if (get().siteTitle !== title) {
       set({ siteTitle: title });
       if (title) document.title = title;
     }
+  },
+  setBranding: (branding) => {
+    set({
+      siteTitle: branding.title || get().siteTitle,
+      logoUrl: branding.logoUrl || '',
+      tagline: branding.tagline || '',
+    });
+    if (branding.title) document.title = branding.title;
   },
   setSettings: (settings) => {
     if (get().settings.length === settings.length && get().settings === settings) return;

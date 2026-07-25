@@ -24,11 +24,15 @@ export interface LoginTokenData {
   refreshTokenExpiresAtUtc: string;
 }
 
-export interface LoginResponseDto {
-  accessToken: string;
-  refreshToken: string;
-  accessTokenExpiresAtUtc: string;
-  refreshTokenExpiresAtUtc: string;
+export interface TenantBrandingDto {
+  title: string | null;
+  logoUrl: string | null;
+  tagline: string | null;
+}
+
+export interface LoginResultDto {
+  tokens: LoginTokenData;
+  branding: TenantBrandingDto;
 }
 
 export interface RefreshTokenRequestDto {

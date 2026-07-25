@@ -1,5 +1,5 @@
 import { BaseRepository } from '../../api/base.repository';
-import { LoginConfigDto, LoginRequestDto, LoginResponseDto, RefreshTokenResponseDto, RegisterRequestDto, RegisterResponseDto, ApiResponse } from '../../../domain/dto/auth.dto';
+import { LoginConfigDto, LoginRequestDto, LoginResultDto, RefreshTokenResponseDto, RegisterRequestDto, RegisterResponseDto, ApiResponse } from '../../../domain/dto/auth.dto';
 import { IAuthService } from '../auth.service.interface';
 
 export interface ForgotPasswordRequestDto {
@@ -25,8 +25,8 @@ export class AuthService extends BaseRepository implements IAuthService {
     return response.data;
   }
 
-  async login(dto: LoginRequestDto): Promise<LoginResponseDto> {
-    const response = await this.post<ApiResponse<LoginResponseDto>>('/login', dto);
+  async login(dto: LoginRequestDto): Promise<LoginResultDto> {
+    const response = await this.post<ApiResponse<LoginResultDto>>('/login', dto);
     if (!response.success) {
       throw new Error(response.message || 'Login failed');
     }

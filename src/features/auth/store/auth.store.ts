@@ -5,6 +5,7 @@ import { authApi } from '../../../core/api/services/auth.api';
 import { menuApi } from '../../../core/api/services/menu.api';
 import { AppConfig } from '../../../core/config/app.config';
 import { queryClient } from '../../../app/providers/AppProviders';
+import { useSiteSettingsStore } from '../../../core/stores/site-settings.store';
 
 interface TokenPayload {
   sub?: string;
@@ -58,16 +59,18 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null, tenantSlug: dto.tenantSlug });
         try {
           const response = await authApi.login(dto);
-          const payload = decodeJwtPayload(response.accessToken);
+          const payload = decodeJwtPayload(response.tokens.accessToken);
 
           set({
-            accessToken: response.accessToken,
-            refreshToken: response.refreshToken,
+            accessToken: response.tokens.accessToken,
+            refreshToken: response.tokens.refreshToken,
             isAuthenticated: true,
             isLoading: false,
             error: null,
             tokenPayload: payload,
           });
+
+          useSiteSettingsStore.getState().setBranding(response.branding);
 
           queryClient.prefetchQuery({
             queryKey: ['menu'],
