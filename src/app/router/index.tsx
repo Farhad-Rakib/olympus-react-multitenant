@@ -3,6 +3,7 @@ import { AuthLayout } from '../layouts/AuthLayout';
 import { DashboardLayout } from '../layouts/DashboardLayout';
 import { AuthGuard } from '../../core/guards/auth.guard';
 import { LoginPage } from '../../features/auth/pages/LoginPage';
+import { RegisterTenantPage } from '../../features/auth/pages/RegisterTenantPage';
 import { DashboardPage } from '../../features/dashboard/pages/DashboardPage';
 import { UsersPage } from '../../features/users/pages/UsersPage';
 import { RolesPage } from '../../features/roles/pages/RolesPage';
@@ -17,6 +18,7 @@ import { PreferencesPage } from '../../features/preferences/pages/PreferencesPag
 import { ProfilePage } from '../../features/profile/pages/ProfilePage';
 import { SiteSettingsPage } from '../../features/site-settings/pages/SiteSettingsPage';
 import { SystemSettingsPage } from '../../features/system-settings/pages/SystemSettingsPage';
+import { AuditLogsPage } from '../../features/audit-logs/pages/AuditLogsPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 
@@ -30,6 +32,7 @@ export const router = createBrowserRouter([
     element: <AuthLayout />,
     children: [
       { path: 'login', element: <LoginPage /> },
+      { path: 'register-tenant', element: <RegisterTenantPage /> },
     ],
   },
   {
@@ -54,6 +57,7 @@ export const router = createBrowserRouter([
       { path: 'profile', element: <ProfilePage /> },
       { path: 'site-settings', element: <SiteSettingsPage /> },
       { path: 'system-settings', element: <SystemSettingsPage /> },
+      { path: 'audit-logs', element: <AuditLogsPage /> },
     ],
   },
   { path: '/403', element: <ForbiddenPage /> },

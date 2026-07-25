@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Ban, Blocks, Rocket, PackageCheck } from 'lucide-react';
+import { Pencil, Ban, Blocks, Rocket, PackageCheck, Link as LinkIcon, Copy, Check } from 'lucide-react';
 import { DataTable, Column, RowAction } from '../../../components/table/DataTable';
 import { ConfirmDialog } from '../../../components/ui/Dialog/ConfirmDialog';
 import { Modal } from '../../../components/ui/Modal/Modal';
@@ -10,12 +10,19 @@ import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
 import { subscriptionPlanApi } from '../../subscription-plans/pages/SubscriptionPlansPage';
 
-interface TenantDto {
+export interface TenantDto {
   id: number;
   slug: string;
   name: string;
   isActive: boolean;
   subscriptionPlanId: number | null;
+  isProvisioned: boolean;
+}
+
+interface PendingRegistrationDto {
+  fullName: string;
+  email: string;
+  submittedAtUtc: string;
 }
 
 interface ModuleToggleDto {
@@ -63,9 +70,22 @@ class TenantApi extends BaseRepository {
   async assignSubscriptionPlan(tenantId: number, subscriptionPlanId: number): Promise<void> {
     await this.post<any>(`/${tenantId}/subscription-plan`, { subscriptionPlanId });
   }
+  async generateRegistrationLink(tenantId: number): Promise<{ token: string; expiresAtUtc: string }> {
+    const res = await this.post<ApiResponse<{ token: string; expiresAtUtc: string }>>(`/${tenantId}/registration-link`, {});
+    if (!res.success) throw new Error(res.message);
+    return res.data;
+  }
+  async getPendingRegistration(tenantId: number): Promise<PendingRegistrationDto | null> {
+    const res = await this.get<ApiResponse<PendingRegistrationDto | null>>(`/${tenantId}/pending-registration`);
+    if (!res.success) throw new Error(res.message);
+    return res.data;
+  }
+  async approveRegistration(tenantId: number, subscriptionPlanId: number | null): Promise<void> {
+    await this.post<any>(`/${tenantId}/approve-registration`, { subscriptionPlanId });
+  }
 }
 
-const tenantApi = new TenantApi();
+export const tenantApi = new TenantApi();
 
 const ToggleSwitch: React.FC<{ checked: boolean; disabled?: boolean; onChange: () => void }> = ({ checked, disabled, onChange }) => (
   <button
@@ -97,6 +117,9 @@ export const TenantsPage: React.FC = () => {
   const [provisionPlanId, setProvisionPlanId] = useState<string>('');
   const [assignPlanTenant, setAssignPlanTenant] = useState<TenantDto | null>(null);
   const [assignPlanId, setAssignPlanId] = useState<string>('');
+  const [linkTenant, setLinkTenant] = useState<TenantDto | null>(null);
+  const [registrationLink, setRegistrationLink] = useState<{ url: string; expiresAtUtc: string } | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const { data: tenants = [], isLoading, error, refetch } = useQuery({
     queryKey: ['tenants'],
@@ -109,6 +132,12 @@ export const TenantsPage: React.FC = () => {
   });
 
   const planNameById = new Map(subscriptionPlans.map((plan) => [plan.id, plan.name]));
+
+  const { data: pendingRegistration, isLoading: loadingPendingRegistration } = useQuery({
+    queryKey: ['tenant-pending-registration', provisionTenant?.id],
+    queryFn: () => tenantApi.getPendingRegistration(provisionTenant!.id),
+    enabled: provisionTenant !== null,
+  });
 
   const { data: modules = [], isLoading: loadingModules } = useQuery({
     queryKey: ['tenant-modules', modulesTenant?.id],
@@ -168,6 +197,19 @@ export const TenantsPage: React.FC = () => {
     onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to provision tenant'),
   });
 
+  const approveRegistrationMutation = useMutation({
+    mutationFn: ({ id, subscriptionPlanId }: { id: number; subscriptionPlanId: number | null }) =>
+      tenantApi.approveRegistration(id, subscriptionPlanId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-modules'] });
+      toast.success('Registration approved and tenant activated successfully');
+      setProvisionTenant(null);
+      setProvisionPlanId('');
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to approve registration'),
+  });
+
   const assignPlanMutation = useMutation({
     mutationFn: ({ id, subscriptionPlanId }: { id: number; subscriptionPlanId: number }) =>
       tenantApi.assignSubscriptionPlan(id, subscriptionPlanId),
@@ -179,6 +221,18 @@ export const TenantsPage: React.FC = () => {
       setAssignPlanId('');
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to assign subscription plan'),
+  });
+
+  const registrationLinkMutation = useMutation({
+    mutationFn: (id: number) => tenantApi.generateRegistrationLink(id),
+    onSuccess: (data) => {
+      setRegistrationLink({ url: `${window.location.origin}/register-tenant?token=${encodeURIComponent(data.token)}`, expiresAtUtc: data.expiresAtUtc });
+      setLinkCopied(false);
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || err.message || 'Failed to generate registration link');
+      setLinkTenant(null);
+    },
   });
 
   const getStatusBadge = (isActive: boolean) => (
@@ -209,15 +263,24 @@ export const TenantsPage: React.FC = () => {
     { icon: Blocks, label: 'Modules', onClick: (t) => setModulesTenant(t), variant: 'secondary' },
     {
       icon: Rocket,
-      label: 'Provision',
+      label: 'Activate',
       onClick: (t) => { setProvisionTenant(t); setProvisionPlanId(t.subscriptionPlanId ? String(t.subscriptionPlanId) : ''); },
       variant: 'secondary',
+      show: (t) => !t.isProvisioned,
+    },
+    {
+      icon: LinkIcon,
+      label: 'Registration Link',
+      onClick: (t) => { setLinkTenant(t); setRegistrationLink(null); registrationLinkMutation.mutate(t.id); },
+      variant: 'secondary',
+      show: (t) => !t.isProvisioned,
     },
     {
       icon: PackageCheck,
       label: 'Assign Plan',
       onClick: (t) => { setAssignPlanTenant(t); setAssignPlanId(t.subscriptionPlanId ? String(t.subscriptionPlanId) : ''); },
       variant: 'secondary',
+      show: (t) => t.isProvisioned,
     },
     { icon: Ban, label: 'Disable', onClick: (t) => setDisableTenantId(t.id), variant: 'danger', show: (t) => t.isActive },
   ];
@@ -319,52 +382,127 @@ export const TenantsPage: React.FC = () => {
       <Modal
         isOpen={provisionTenant !== null}
         onClose={() => setProvisionTenant(null)}
-        title={`Provision "${provisionTenant?.name ?? ''}"`}
+        title={`Activate "${provisionTenant?.name ?? ''}"`}
+        size="md"
+      >
+        {loadingPendingRegistration ? (
+          <div className="p-8 text-center text-gray-400">Checking for a pending request...</div>
+        ) : (
+          <>
+            {pendingRegistration ? (
+              <div className="mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-300">Pending request awaiting approval</p>
+                <p className="text-sm text-blue-800 dark:text-blue-400 mt-1">
+                  {pendingRegistration.fullName} ({pendingRegistration.email})
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-500 mt-1">
+                  Submitted {new Date(pendingRegistration.submittedAtUtc).toLocaleString()}
+                </p>
+              </div>
+            ) : null}
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              {pendingRegistration
+                ? 'Approving seeds default roles, menus, and creates the admin account above with the credentials they submitted.'
+                : 'Seeds default roles, menus and a generic admin user for this tenant. Safe to re-run.'}{' '}
+              Optionally pick a subscription plan to entitle its modules at the same time; leave blank to entitle only
+              the Core module.
+            </p>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subscription Plan</label>
+                <select
+                  value={provisionPlanId}
+                  onChange={(e) => setProvisionPlanId(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">No plan (Core module only)</option>
+                  {subscriptionPlans.map((plan) => (
+                    <option key={plan.id} value={plan.id}>{plan.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={() => setProvisionTenant(null)}
+                  disabled={provisionMutation.isPending || approveRegistrationMutation.isPending}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={provisionMutation.isPending || approveRegistrationMutation.isPending}
+                  onClick={() => {
+                    if (!provisionTenant) return;
+                    const subscriptionPlanId = provisionPlanId ? Number(provisionPlanId) : null;
+                    if (pendingRegistration) {
+                      approveRegistrationMutation.mutate({ id: provisionTenant.id, subscriptionPlanId });
+                    } else {
+                      provisionMutation.mutate({ id: provisionTenant.id, subscriptionPlanId });
+                    }
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {pendingRegistration ? 'Approve & Activate' : 'Activate'}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={linkTenant !== null}
+        onClose={() => { setLinkTenant(null); setRegistrationLink(null); }}
+        title={`Registration Link for "${linkTenant?.name ?? ''}"`}
         size="md"
       >
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Seeds default roles, menus and an admin user for this tenant. Safe to re-run. Optionally pick a
-          subscription plan to entitle its modules at the same time; leave blank to entitle only the Core module.
+          Share this link with the tenant's admin (email, SMS, chat — however you'd send a message). Opening it lets
+          them submit their name, email and password as a request — it does not grant access on its own. Review it
+          under "Activate" for this tenant once they've submitted, and approve to actually activate the tenant.
+          Valid for 7 days or until submitted.
         </p>
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subscription Plan</label>
-            <select
-              value={provisionPlanId}
-              onChange={(e) => setProvisionPlanId(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">No plan (Core module only)</option>
-              {subscriptionPlans.map((plan) => (
-                <option key={plan.id} value={plan.id}>{plan.name}</option>
-              ))}
-            </select>
+        {registrationLinkMutation.isPending ? (
+          <div className="p-8 text-center text-gray-400">Generating link...</div>
+        ) : registrationLink ? (
+          <div className="space-y-4">
+            <div className="flex items-stretch gap-2">
+              <input
+                type="text"
+                readOnly
+                value={registrationLink.url}
+                onFocus={(e) => e.target.select()}
+                className="flex-1 min-w-0 px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 text-sm truncate"
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(registrationLink.url);
+                  setLinkCopied(true);
+                  toast.success('Link copied to clipboard');
+                }}
+                className="px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5 shrink-0"
+              >
+                {linkCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {linkCopied ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+            <p className="text-xs text-gray-400">
+              Expires {new Date(registrationLink.expiresAtUtc).toLocaleString()}
+            </p>
+            <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={() => { setLinkTenant(null); setRegistrationLink(null); }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
-          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button
-              type="button"
-              onClick={() => setProvisionTenant(null)}
-              disabled={provisionMutation.isPending}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={provisionMutation.isPending}
-              onClick={() =>
-                provisionTenant &&
-                provisionMutation.mutate({
-                  id: provisionTenant.id,
-                  subscriptionPlanId: provisionPlanId ? Number(provisionPlanId) : null,
-                })
-              }
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
-              Provision
-            </button>
-          </div>
-        </div>
+        ) : null}
       </Modal>
 
       <Modal
