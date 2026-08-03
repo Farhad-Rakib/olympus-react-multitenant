@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Eye, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Eye, Plus, Pencil, Trash2, LogIn } from 'lucide-react';
 import { DataTable, Column, RowAction } from '../../../components/table/DataTable';
 import { Modal } from '../../../components/ui/Modal/Modal';
 import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
 import { tenantApi } from '../../tenants/pages/TenantsPage';
 
-export type AuditAction = 'Created' | 'Updated' | 'Deleted';
+// Order must match the backend AuditAction enum exactly (Domain/Enums/AuditAction.cs) --
+// `action` on AuditLogDto is the raw numeric enum value, indexed into this array.
+export type AuditAction = 'Created' | 'Updated' | 'Deleted' | 'Accessed';
 
-const ACTION_LABELS: AuditAction[] = ['Created', 'Updated', 'Deleted'];
+const ACTION_LABELS: AuditAction[] = ['Created', 'Updated', 'Deleted', 'Accessed'];
 
 export interface AuditLogDto {
   id: number;
@@ -48,7 +50,8 @@ interface AuditLogQueryParams {
 const ENTITY_NAMES = [
   'Menu', 'Module', 'Notification', 'Permission', 'Role', 'RolePermission',
   'SiteSetting', 'SubscriptionPlan', 'SubscriptionPlanModule', 'SystemSetting',
-  'Tenant', 'TenantModule', 'User', 'UserRole',
+  'Tenant', 'TenantDomain', 'TenantFeatureFlag', 'TenantModule', 'TenantContextOverride',
+  'User', 'UserRole',
 ];
 
 class AuditLogApi extends BaseRepository {
@@ -66,12 +69,14 @@ const actionBadge: Record<AuditAction, string> = {
   Created: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
   Updated: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   Deleted: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  Accessed: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
 };
 
 const actionIcon: Record<AuditAction, React.ReactNode> = {
   Created: <Plus className="w-3 h-3" />,
   Updated: <Pencil className="w-3 h-3" />,
   Deleted: <Trash2 className="w-3 h-3" />,
+  Accessed: <LogIn className="w-3 h-3" />,
 };
 
 const selectClasses =

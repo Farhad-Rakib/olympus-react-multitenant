@@ -32,6 +32,8 @@ const iconMap: Record<string, string> = {
   profile: 'User',
   preferences: 'Sliders',
   menu: 'Menu',
+  flag: 'Flag',
+  package: 'Package',
 };
 
 interface SidebarProps {

@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { AppConfig } from '../config/app.config';
 import { ContentType, HttpRequestConfig } from './http.types';
+import { toast } from '../../components/ui/Toast/toast.store';
 
 export interface IBaseRepository {
   get<T>(url: string, config?: HttpRequestConfig): Promise<T>;
@@ -60,6 +61,16 @@ export class BaseRepository implements IBaseRepository {
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
+
+        // Global, not per-caller: both are new response codes as of this backend release, and
+        // most queries (background menu/dashboard fetches, etc.) have no local onError handler at
+        // all -- without this, a suspended/expired tenant or a rate-limited request just fails
+        // silently with no visible explanation to the user.
+        if (error.response?.status === 402) {
+          toast.error(error.response?.data?.message || 'This tenant’s subscription is not active. Contact your admin.');
+        } else if (error.response?.status === 429) {
+          toast.warning(error.response?.data?.message || 'Too many requests. Please slow down and try again shortly.');
+        }
 
         if (error.response?.status === 401 && !originalRequest._retry) {
           if (isRefreshing) {
