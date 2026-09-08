@@ -7,6 +7,15 @@ import { useSiteSettingsStore } from '../../../core/stores/site-settings.store';
 import { ConfirmDialog } from '../../../components/ui/Dialog/ConfirmDialog';
 import { Modal } from '../../../components/ui/Modal/Modal';
 
+// Site settings are a free-form key/value store, so secrets (Smtp.Password today) sit in the same
+// table as cosmetic values like Site.Title. Keys are matched by name rather than maintaining an
+// allow-list, so a setting added later is masked by default instead of leaking until someone
+// remembers to register it.
+const SECRET_KEY_PATTERN = /(password|secret|token|credential|apikey|api_key)/i;
+const MASKED_PLACEHOLDER = '••••••••';
+
+const isSecretKey = (key: string): boolean => SECRET_KEY_PATTERN.test(key);
+
 export const SiteSettingsPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { setSettings } = useSiteSettingsStore();
@@ -119,7 +128,13 @@ export const SiteSettingsPage: React.FC = () => {
                 {settings.map((setting) => (
                   <tr key={setting.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{setting.key}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">{setting.value || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
+                      {!setting.value
+                        ? '-'
+                        : isSecretKey(setting.key)
+                          ? <span className="tracking-widest text-gray-400 dark:text-gray-500">{MASKED_PLACEHOLDER}</span>
+                          : setting.value}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{setting.description || '-'}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1">
@@ -160,6 +175,8 @@ export const SiteSettingsPage: React.FC = () => {
           <div>
             <label className={labelCls}>Value</label>
             <input
+              type={isSecretKey(formData.key) ? 'password' : 'text'}
+              autoComplete="off"
               value={formData.value}
               onChange={(e) => setFormData(prev => ({ ...prev, value: e.target.value }))}
               className={inputCls}
@@ -210,6 +227,8 @@ export const SiteSettingsPage: React.FC = () => {
             <div>
               <label className={labelCls}>Value</label>
               <input
+                type={isSecretKey(formData.key) ? 'password' : 'text'}
+                autoComplete="off"
                 value={formData.value}
                 onChange={(e) => setFormData(prev => ({ ...prev, value: e.target.value }))}
                 className={inputCls}
