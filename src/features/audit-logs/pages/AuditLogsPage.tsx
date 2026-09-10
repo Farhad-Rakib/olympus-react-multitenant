@@ -6,6 +6,7 @@ import { Modal } from '../../../components/ui/Modal/Modal';
 import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
 import { tenantApi } from '../../tenants/pages/TenantsPage';
+import { useAuthStore } from '../../auth/store/auth.store';
 
 // Order must match the backend AuditAction enum exactly (Domain/Enums/AuditAction.cs) --
 // `action` on AuditLogDto is the raw numeric enum value, indexed into this array.
@@ -92,9 +93,17 @@ export const AuditLogsPage: React.FC = () => {
   const [dateTo, setDateTo] = useState('');
   const [viewLog, setViewLog] = useState<AuditLogDto | null>(null);
 
+  const { tokenPayload } = useAuthStore();
+
+  // The backend pins a non-platform caller's audit query to their own tenant, so for them the
+  // tenant filter and the Tenant column have exactly one possible value -- and the tenant list
+  // itself is a platform-only endpoint that would 403. Mirrors permission.guard.tsx.
+  const isPlatformSuperAdmin = tokenPayload?.platform_admin === 'true';
+
   const { data: tenants = [] } = useQuery({
     queryKey: ['tenants'],
     queryFn: () => tenantApi.getAll(),
+    enabled: isPlatformSuperAdmin,
   });
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -147,11 +156,13 @@ export const AuditLogsPage: React.FC = () => {
         </span>
       ),
     },
-    {
-      key: 'tenantName',
-      label: 'Tenant',
-      render: (_, log) => log.tenantName || <span className="text-gray-400">Global</span>,
-    },
+    ...(isPlatformSuperAdmin
+      ? [{
+          key: 'tenantName',
+          label: 'Tenant',
+          render: (_: unknown, log: AuditLogDto) => log.tenantName || <span className="text-gray-400">Global</span>,
+        } as Column<AuditLogDto>]
+      : []),
     {
       key: 'userName',
       label: 'User',
@@ -204,16 +215,18 @@ export const AuditLogsPage: React.FC = () => {
           ))}
         </select>
 
-        <select
-          value={tenantId}
-          onChange={(e) => resetToFirstPage(setTenantId)(e.target.value)}
-          className={selectClasses}
-        >
-          <option value="">All tenants</option>
-          {tenants.map((tenant) => (
-            <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
-          ))}
-        </select>
+        {isPlatformSuperAdmin && (
+          <select
+            value={tenantId}
+            onChange={(e) => resetToFirstPage(setTenantId)(e.target.value)}
+            className={selectClasses}
+          >
+            <option value="">All tenants</option>
+            {tenants.map((tenant) => (
+              <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
+            ))}
+          </select>
+        )}
 
         <input
           type="date"

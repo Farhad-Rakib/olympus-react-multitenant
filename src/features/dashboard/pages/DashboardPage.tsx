@@ -1,289 +1,220 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell,
-} from 'recharts';
-import {
-  Users, DollarSign, ShoppingCart, TrendingUp, ArrowUpRight, ArrowDownRight,
-  MoreHorizontal, Eye, RefreshCw,
+  Users, Package, CheckCircle2, XCircle, CalendarClock, AlertTriangle, Boxes,
 } from 'lucide-react';
-import { dashboardApi } from '../../../core/api/services/dashboard.api';
+import { tenantOverviewApi } from '../../../core/api/services/tenant-overview.api';
+import { LicenseStatus } from '../../../core/api/services/tenant-self.api';
 import { Loader } from '../../../components/ui/Loader/Loader';
 
-const channelData = [
-  { name: 'Direct', value: 35, color: '#3b82f6' },
-  { name: 'Organic', value: 30, color: '#10b981' },
-  { name: 'Social', value: 20, color: '#f59e0b' },
-  { name: 'Referral', value: 15, color: '#ef4444' },
-];
+const LICENSE_LABEL: Record<LicenseStatus, string> = {
+  [LicenseStatus.Active]: 'Active',
+  [LicenseStatus.Trial]: 'Trial',
+  [LicenseStatus.GracePeriod]: 'Grace period',
+  [LicenseStatus.Expired]: 'Expired',
+  [LicenseStatus.Suspended]: 'Suspended',
+};
 
-const weeklyData = [
-  { day: 'Mon', sales: 340, orders: 45 },
-  { day: 'Tue', sales: 280, orders: 38 },
-  { day: 'Wed', sales: 520, orders: 67 },
-  { day: 'Thu', sales: 410, orders: 52 },
-  { day: 'Fri', sales: 680, orders: 84 },
-  { day: 'Sat', sales: 390, orders: 41 },
-  { day: 'Sun', sales: 250, orders: 29 },
-];
+const LICENSE_TONE: Record<LicenseStatus, string> = {
+  [LicenseStatus.Active]: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  [LicenseStatus.Trial]: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  [LicenseStatus.GracePeriod]: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  [LicenseStatus.Expired]: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+  [LicenseStatus.Suspended]: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+};
 
-const defaultRevenueData = [
-  { name: 'Jan', value: 12000 },
-  { name: 'Feb', value: 19000 },
-  { name: 'Mar', value: 15000 },
-  { name: 'Apr', value: 22000 },
-  { name: 'May', value: 28000 },
-  { name: 'Jun', value: 24000 },
-  { name: 'Jul', value: 32000 },
-  { name: 'Aug', value: 29000 },
-  { name: 'Sep', value: 35000 },
-  { name: 'Oct', value: 31000 },
-  { name: 'Nov', value: 38000 },
-  { name: 'Dec', value: 42000 },
-];
+const formatDate = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : null;
 
-const recentOrders = [
-  { id: '#ORD-7812', customer: 'Sarah Johnson', product: 'Wireless Headphones', amount: '$259.00', status: 'completed', avatar: 'SJ' },
-  { id: '#ORD-7811', customer: 'Michael Chen', product: 'Smart Watch Pro', amount: '$499.00', status: 'pending', avatar: 'MC' },
-  { id: '#ORD-7810', customer: 'Emma Wilson', product: 'Laptop Stand', amount: '$79.99', status: 'completed', avatar: 'EW' },
-  { id: '#ORD-7809', customer: 'David Brown', product: 'USB-C Hub', amount: '$49.99', status: 'processing', avatar: 'DB' },
-  { id: '#ORD-7808', customer: 'Lisa Anderson', product: 'Keyboard MX', amount: '$169.00', status: 'completed', avatar: 'LA' },
-];
-
-const defaultActivity = [
-  { id: '1', user: 'John Admin', action: 'created a new user account', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), type: 'success' as const },
-  { id: '2', user: 'System', action: 'completed daily backup', timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), type: 'info' as const },
-  { id: '3', user: 'Jane Manager', action: 'updated role permissions', timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(), type: 'warning' as const },
-  { id: '4', user: 'System', action: 'detected unusual login attempt', timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(), type: 'error' as const },
-  { id: '5', user: 'Mike User', action: 'exported report data', timestamp: new Date(Date.now() - 1000 * 60 * 180).toISOString(), type: 'info' as const },
-];
-
-const statusBadge: Record<string, string> = {
-  completed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-  pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  processing: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+const daysUntil = (iso: string | null) => {
+  if (!iso) return null;
+  const diff = new Date(iso).getTime() - Date.now();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
 };
 
 export const DashboardPage: React.FC = () => {
-  const { data, isLoading, refetch, isFetching } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: () => dashboardApi.getDashboardData(),
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['tenant-overview'],
+    queryFn: () => tenantOverviewApi.getOverview(),
     retry: false,
   });
 
-  const revenueData = data?.chartData?.revenue || defaultRevenueData;
-  const activityData = data?.recentActivity || defaultActivity;
+  if (isLoading) return <Loader text="Loading dashboard..." />;
+
+  if (error || !data) {
+    return (
+      <div className="rounded-lg border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-900/20 p-6">
+        <div className="flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+          <p className="text-sm text-rose-700 dark:text-rose-300">
+            We couldn&apos;t load your workspace overview. Please refresh, or contact your administrator if this continues.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const enabledModules = data.modules.filter(m => m.isEnabled);
+  const expiryIso = data.licenseStatus === LicenseStatus.Trial ? data.trialEndsAtUtc : data.licenseExpiresAtUtc;
+  const expiryDate = formatDate(expiryIso);
+  const remainingDays = daysUntil(expiryIso);
+
+  // Only surfaced when it is genuinely close, so it stays meaningful instead of becoming furniture.
+  const showExpiryWarning = remainingDays !== null && remainingDays <= 14;
+
+  const seatUsage = data.plan && data.plan.maxUsers > 0
+    ? Math.min(100, Math.round((data.userCount / data.plan.maxUsers) * 100))
+    : null;
 
   const stats = [
-    { title: 'Total Users', value: '2,543', change: 12.5, type: 'increase' as const, icon: Users, color: 'text-blue-600', lightBg: 'bg-blue-50 dark:bg-blue-900/20' },
-    { title: 'Revenue', value: '$45,231', change: 8.2, type: 'increase' as const, icon: DollarSign, color: 'text-emerald-600', lightBg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-    { title: 'Orders', value: '1,234', change: 3.1, type: 'decrease' as const, icon: ShoppingCart, color: 'text-amber-600', lightBg: 'bg-amber-50 dark:bg-amber-900/20' },
-    { title: 'Conversion', value: '3.24%', change: 2.4, type: 'increase' as const, icon: TrendingUp, color: 'text-rose-600', lightBg: 'bg-rose-50 dark:bg-rose-900/20' },
+    {
+      label: 'Plan',
+      value: data.plan?.name ?? 'No plan assigned',
+      icon: Package,
+      tone: 'text-blue-600',
+      bg: 'bg-blue-50 dark:bg-blue-900/20',
+    },
+    {
+      label: 'Users',
+      value: data.plan && data.plan.maxUsers > 0 ? `${data.userCount} / ${data.plan.maxUsers}` : `${data.userCount}`,
+      icon: Users,
+      tone: 'text-emerald-600',
+      bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+    },
+    {
+      label: 'Active modules',
+      value: `${enabledModules.length} / ${data.modules.length}`,
+      icon: Boxes,
+      tone: 'text-violet-600',
+      bg: 'bg-violet-50 dark:bg-violet-900/20',
+    },
+    {
+      label: data.licenseStatus === LicenseStatus.Trial ? 'Trial ends' : 'Renews',
+      value: expiryDate ?? 'No expiry',
+      icon: CalendarClock,
+      tone: 'text-amber-600',
+      bg: 'bg-amber-50 dark:bg-amber-900/20',
+    },
   ];
-
-  if (isLoading) return <Loader text="Loading dashboard..." />;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">Welcome back! Here is your business overview.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{data.name}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Your workspace at a glance
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-          <select className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option>Last 7 days</option>
-            <option>Last 30 days</option>
-            <option>Last 90 days</option>
-            <option>This year</option>
-          </select>
-        </div>
+        <span className={`self-start px-3 py-1 rounded-full text-xs font-medium ${LICENSE_TONE[data.licenseStatus]}`}>
+          {LICENSE_LABEL[data.licenseStatus]}
+        </span>
       </div>
+
+      {showExpiryWarning && (
+        <div className="rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-900/20 p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800 dark:text-amber-300">
+            {remainingDays !== null && remainingDays >= 0
+              ? `Your ${data.licenseStatus === LicenseStatus.Trial ? 'trial' : 'subscription'} ends in ${remainingDays} day${remainingDays === 1 ? '' : 's'}${expiryDate ? ` (${expiryDate})` : ''}.`
+              : `Your ${data.licenseStatus === LicenseStatus.Trial ? 'trial' : 'subscription'} has expired${expiryDate ? ` (${expiryDate})` : ''}.`}
+            {' '}Contact your administrator to renew.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          const isUp = stat.type === 'increase';
-          return (
-            <div key={stat.title} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-11 h-11 ${stat.lightBg} rounded-lg flex items-center justify-center`}>
-                  <Icon className={`w-5 h-5 ${stat.color}`} />
-                </div>
-                <div className={`flex items-center gap-0.5 text-xs font-semibold ${isUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
-                  {isUp ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                  {stat.change}%
-                </div>
-              </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{stat.title}</p>
+        {stats.map((stat) => (
+          <div key={stat.label} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</span>
+              <span className={`p-2 rounded-lg ${stat.bg}`}>
+                <stat.icon className={`w-4 h-4 ${stat.tone}`} />
+              </span>
             </div>
-          );
-        })}
+            <p className="text-xl font-semibold text-gray-900 dark:text-white truncate" title={stat.value}>
+              {stat.value}
+            </p>
+          </div>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
-        <div className="lg:col-span-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Revenue Overview</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Monthly revenue performance</p>
-            </div>
-            <button className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-              <MoreHorizontal className="w-4 h-4 text-gray-400" />
-            </button>
+      {seatUsage !== null && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-medium text-gray-900 dark:text-white">Seat usage</h2>
+            <span className="text-sm text-gray-500 dark:text-gray-400">{seatUsage}%</span>
           </div>
-          <ResponsiveContainer width="100%" height={320}>
-            <AreaChart data={revenueData}>
-              <defs>
-                <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.08} />
-              <XAxis dataKey="name" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
-              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px' }} />
-              <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} fill="url(#revenueGrad)" />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+            <div
+              className={`h-full rounded-full ${seatUsage >= 90 ? 'bg-rose-500' : seatUsage >= 70 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+              style={{ width: `${seatUsage}%` }}
+            />
+          </div>
+          {seatUsage >= 90 && (
+            <p className="mt-2 text-xs text-rose-600 dark:text-rose-400">
+              You are close to your plan&apos;s user limit.
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="p-5 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">Your modules</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {data.plan
+              ? `Included with the ${data.plan.name} plan`
+              : 'Modules currently granted to your workspace'}
+          </p>
         </div>
 
-        <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Weekly Sales</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Sales performance this week</p>
-            </div>
+        {data.modules.length === 0 ? (
+          <div className="p-8 text-center">
+            <Package className="w-8 h-8 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No modules are assigned to your workspace yet. Contact your administrator to get started.
+            </p>
           </div>
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart data={weeklyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.08} />
-              <XAxis dataKey="day" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px' }} />
-              <Bar dataKey="sales" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="orders" fill="#10b981" radius={[4, 4, 0, 0]} opacity={0.7} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Recent Orders</h3>
-            <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium flex items-center gap-1">
-              <Eye className="w-3 h-3" /> View All
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-700/50">
-                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Customer</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden sm:table-cell">Product</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
-                {recentOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300">
-                          {order.avatar}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">{order.customer}</p>
-                          <p className="text-xs text-gray-400 sm:hidden">{order.product}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-gray-600 dark:text-gray-400 hidden sm:table-cell">{order.product}</td>
-                    <td className="px-5 py-3.5 text-right font-medium text-gray-900 dark:text-white">{order.amount}</td>
-                    <td className="px-5 py-3.5 text-right">
-                      <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full capitalize ${statusBadge[order.status]}`}>
-                        {order.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Traffic Sources</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie data={channelData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={4} dataKey="value">
-                {channelData.map((entry) => (
-                  <Cell key={entry.name} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px' }} formatter={(value) => [`${value}%`, '']} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="space-y-3 mt-4">
-            {channelData.map((ch) => (
-              <div key={ch.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ch.color }} />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{ch.name}</span>
+        ) : (
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+            {data.modules.map((module) => (
+              <li key={module.key} className="p-5 flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{module.name}</p>
+                  {module.description && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{module.description}</p>
+                  )}
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-24 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${ch.value}%`, backgroundColor: ch.color }} />
-                  </div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white w-8 text-right">{ch.value}%</span>
-                </div>
-              </div>
+                <span
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                    module.isEnabled
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                  }`}
+                >
+                  {module.isEnabled ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                  {module.isEnabled ? 'Active' : 'Not active'}
+                </span>
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+        )}
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
-        <div className="relative">
-          <div className="absolute left-[17px] top-2 bottom-2 w-px bg-gray-200 dark:bg-gray-700" />
-          <div className="space-y-5">
-            {activityData.map((activity) => {
-              const typeColors: Record<string, string> = {
-                success: 'bg-emerald-500',
-                error: 'bg-red-500',
-                warning: 'bg-amber-500',
-                info: 'bg-blue-500',
-              };
-              return (
-                <div key={activity.id} className="flex items-start gap-4 relative">
-                  <div className={`w-[9px] h-[9px] mt-1.5 rounded-full ${typeColors[activity.type]} ring-4 ring-white dark:ring-gray-800 z-10`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      <span className="font-medium">{activity.user}</span>{' '}
-                      <span className="text-gray-500 dark:text-gray-400">{activity.action}</span>
-                    </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                      {new Date(activity.timestamp).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      <div className="flex flex-wrap gap-3">
+        <Link
+          to="/users"
+          className="text-sm px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+        >
+          Manage users
+        </Link>
+        <Link
+          to="/site-settings"
+          className="text-sm px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+        >
+          Workspace settings
+        </Link>
       </div>
     </div>
   );
