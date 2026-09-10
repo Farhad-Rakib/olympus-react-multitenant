@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { applyLocale } from '../i18n';
 
 export interface SiteSettingEntry {
   id: number;
@@ -17,6 +18,8 @@ export const BRANDING_KEYS = {
   faviconUrl: 'Site.FaviconUrl',
   brandColor: 'UI.BrandColor',
   supportEmail: 'Site.SupportEmail',
+  locale: 'UI.Locale',
+  timeZone: 'UI.TimeZone',
 } as const;
 
 export interface Branding {
@@ -26,6 +29,8 @@ export interface Branding {
   faviconUrl: string | null;
   brandColor: string | null;
   supportEmail: string | null;
+  locale: string | null;
+  timeZone: string | null;
 }
 
 // Pushes branding into the document itself -- the tab title, the favicon, and the CSS custom
@@ -44,6 +49,10 @@ export const applyBranding = (branding: Partial<Branding>) => {
     link.href = branding.faviconUrl;
   }
 
+  if (branding.locale) {
+    applyLocale(branding.locale);
+  }
+
   if (branding.brandColor) {
     document.documentElement.style.setProperty('--brand-color', branding.brandColor);
   }
@@ -56,6 +65,8 @@ interface SiteSettingsState {
   faviconUrl: string;
   brandColor: string;
   supportEmail: string;
+  locale: string;
+  timeZone: string;
   settings: SiteSettingEntry[];
   setSiteTitle: (title: string) => void;
   setBranding: (branding: Partial<Branding>) => void;
@@ -70,6 +81,8 @@ export const useSiteSettingsStore = create<SiteSettingsState>()((set, get) => ({
   faviconUrl: '',
   brandColor: '',
   supportEmail: '',
+  locale: '',
+  timeZone: '',
   settings: [],
   setSiteTitle: (title) => {
     if (get().siteTitle !== title) {
@@ -85,6 +98,8 @@ export const useSiteSettingsStore = create<SiteSettingsState>()((set, get) => ({
       faviconUrl: branding.faviconUrl || '',
       brandColor: branding.brandColor || '',
       supportEmail: branding.supportEmail || '',
+      locale: branding.locale || '',
+      timeZone: branding.timeZone || '',
     });
     applyBranding(branding);
   },
@@ -101,6 +116,8 @@ export const useSiteSettingsStore = create<SiteSettingsState>()((set, get) => ({
       faviconUrl: valueOf(BRANDING_KEYS.faviconUrl),
       brandColor: valueOf(BRANDING_KEYS.brandColor),
       supportEmail: valueOf(BRANDING_KEYS.supportEmail),
+      locale: valueOf(BRANDING_KEYS.locale),
+      timeZone: valueOf(BRANDING_KEYS.timeZone),
     };
 
     set({
@@ -111,6 +128,8 @@ export const useSiteSettingsStore = create<SiteSettingsState>()((set, get) => ({
       faviconUrl: branding.faviconUrl || get().faviconUrl,
       brandColor: branding.brandColor || get().brandColor,
       supportEmail: branding.supportEmail || get().supportEmail,
+      locale: branding.locale || get().locale,
+      timeZone: branding.timeZone || get().timeZone,
     });
 
     applyBranding(branding);

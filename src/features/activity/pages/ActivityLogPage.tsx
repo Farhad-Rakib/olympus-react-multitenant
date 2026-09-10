@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Search, Filter, User, Settings, Shield, Database, LogIn, Trash2, CreditCard as Edit, Plus } from 'lucide-react';
+import { formatDateTime } from '../../../core/i18n/format';
 
 interface ActivityEntry {
   id: string;
@@ -71,7 +72,7 @@ export const ActivityLogPage: React.FC = () => {
     if (mins < 60) return `${mins}m ago`;
     const hrs = Math.floor(mins / 60);
     if (hrs < 24) return `${hrs}h ago`;
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return formatDateTime(d);
   };
 
   return (

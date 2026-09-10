@@ -3,6 +3,7 @@ import { Sliders } from 'lucide-react';
 import { toast } from '../../../components/ui/Toast/toast.store';
 import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
+import { getApiErrorMessage } from '../../../core/utils/error';
 
 interface SystemSettingDto {
   id: number;
@@ -76,7 +77,7 @@ export const SystemSettingsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['login-config'] });
       toast.success('System setting updated');
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to update setting'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update setting')),
   });
 
   return (

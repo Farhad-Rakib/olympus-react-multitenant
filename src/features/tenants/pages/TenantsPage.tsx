@@ -12,6 +12,8 @@ import { toast } from '../../../components/ui/Toast/toast.store';
 import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
 import { subscriptionPlanApi } from '../../subscription-plans/pages/SubscriptionPlansPage';
+import { getApiErrorMessage } from '../../../core/utils/error';
+import { formatDateTime } from '../../../core/i18n/format';
 
 export interface TenantDto {
   id: number;
@@ -78,7 +80,7 @@ class TenantApi extends BaseRepository {
     return res.data;
   }
   async disable(id: number): Promise<void> {
-    await this.delete<any>(`/${id}`);
+    await this.delete<void>(`/${id}`);
   }
   async getModules(tenantId: number): Promise<ModuleToggleDto[]> {
     const res = await this.get<ApiResponse<ModuleToggleDto[]>>(`/${tenantId}/modules`);
@@ -86,16 +88,16 @@ class TenantApi extends BaseRepository {
     return res.data;
   }
   async enableModule(tenantId: number, moduleId: number): Promise<void> {
-    await this.post<any>(`/${tenantId}/modules/${moduleId}`, {});
+    await this.post<void>(`/${tenantId}/modules/${moduleId}`, {});
   }
   async disableModule(tenantId: number, moduleId: number): Promise<void> {
-    await this.delete<any>(`/${tenantId}/modules/${moduleId}`);
+    await this.delete<void>(`/${tenantId}/modules/${moduleId}`);
   }
   async provision(tenantId: number, subscriptionPlanId: number | null): Promise<void> {
-    await this.post<any>(`/${tenantId}/provision`, { subscriptionPlanId });
+    await this.post<void>(`/${tenantId}/provision`, { subscriptionPlanId });
   }
   async assignSubscriptionPlan(tenantId: number, subscriptionPlanId: number): Promise<void> {
-    await this.post<any>(`/${tenantId}/subscription-plan`, { subscriptionPlanId });
+    await this.post<void>(`/${tenantId}/subscription-plan`, { subscriptionPlanId });
   }
   async generateRegistrationLink(tenantId: number): Promise<{ token: string; expiresAtUtc: string }> {
     const res = await this.post<ApiResponse<{ token: string; expiresAtUtc: string }>>(`/${tenantId}/registration-link`, {});
@@ -108,7 +110,7 @@ class TenantApi extends BaseRepository {
     return res.data;
   }
   async approveRegistration(tenantId: number, subscriptionPlanId: number | null): Promise<void> {
-    await this.post<any>(`/${tenantId}/approve-registration`, { subscriptionPlanId });
+    await this.post<void>(`/${tenantId}/approve-registration`, { subscriptionPlanId });
   }
   async getLicenseStatus(tenantId: number): Promise<TenantLicenseStatusDto> {
     const res = await this.get<ApiResponse<TenantLicenseStatusDto>>(`/${tenantId}/license`);
@@ -116,16 +118,16 @@ class TenantApi extends BaseRepository {
     return res.data;
   }
   async startTrial(tenantId: number, trialEndsAtUtc: string): Promise<void> {
-    await this.post<any>(`/${tenantId}/license/trial`, { trialEndsAtUtc });
+    await this.post<void>(`/${tenantId}/license/trial`, { trialEndsAtUtc });
   }
   async setLicenseExpiry(tenantId: number, licenseExpiresAtUtc: string | null): Promise<void> {
-    await this.post<any>(`/${tenantId}/license/expiry`, { licenseExpiresAtUtc });
+    await this.post<void>(`/${tenantId}/license/expiry`, { licenseExpiresAtUtc });
   }
   async suspendLicense(tenantId: number): Promise<void> {
-    await this.post<any>(`/${tenantId}/license/suspend`, {});
+    await this.post<void>(`/${tenantId}/license/suspend`, {});
   }
   async unsuspendLicense(tenantId: number): Promise<void> {
-    await this.post<any>(`/${tenantId}/license/unsuspend`, {});
+    await this.post<void>(`/${tenantId}/license/unsuspend`, {});
   }
   async getDomains(tenantId: number): Promise<TenantDomainDto[]> {
     const res = await this.get<ApiResponse<TenantDomainDto[]>>(`/${tenantId}/domains`);
@@ -138,7 +140,7 @@ class TenantApi extends BaseRepository {
     return res.data;
   }
   async removeDomain(tenantId: number, domainId: number): Promise<void> {
-    await this.delete<any>(`/${tenantId}/domains/${domainId}`);
+    await this.delete<void>(`/${tenantId}/domains/${domainId}`);
   }
   async exportData(tenantId: number): Promise<unknown> {
     const res = await this.get<ApiResponse<unknown>>(`/${tenantId}/export`);
@@ -146,10 +148,10 @@ class TenantApi extends BaseRepository {
     return res.data;
   }
   async purge(tenantId: number, confirmSlug: string): Promise<void> {
-    await this.delete<any>(`/${tenantId}/purge`, { params: { confirmSlug } });
+    await this.delete<void>(`/${tenantId}/purge`, { params: { confirmSlug } });
   }
   async resyncCatalog(tenantId: number): Promise<void> {
-    await this.post<any>(`/${tenantId}/resync-catalog`, {});
+    await this.post<void>(`/${tenantId}/resync-catalog`, {});
   }
   async resyncAllCatalogs(): Promise<TenantCatalogResyncResultDto> {
     const res = await this.post<ApiResponse<TenantCatalogResyncResultDto>>('/resync-catalog-all', {});
@@ -242,7 +244,7 @@ export const TenantsPage: React.FC = () => {
       enable ? tenantApi.enableModule(modulesTenant!.id, moduleId) : tenantApi.disableModule(modulesTenant!.id, moduleId),
     onMutate: ({ moduleId }) => setPendingModuleId(moduleId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tenant-modules', modulesTenant?.id] }),
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to update module'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update module')),
     onSettled: () => setPendingModuleId(null),
   });
 
@@ -253,7 +255,7 @@ export const TenantsPage: React.FC = () => {
       toast.success('Tenant created successfully');
       setShowAddModal(false);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to create tenant'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to create tenant')),
   });
 
   const updateMutation = useMutation({
@@ -263,7 +265,7 @@ export const TenantsPage: React.FC = () => {
       toast.success('Tenant updated successfully');
       setEditTenant(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to update tenant'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update tenant')),
   });
 
   const disableMutation = useMutation({
@@ -273,7 +275,7 @@ export const TenantsPage: React.FC = () => {
       toast.success('Tenant disabled successfully');
       setDisableTenantId(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to disable tenant'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to disable tenant')),
   });
 
   const provisionMutation = useMutation({
@@ -286,7 +288,7 @@ export const TenantsPage: React.FC = () => {
       setProvisionTenant(null);
       setProvisionPlanId('');
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to provision tenant'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to provision tenant')),
   });
 
   const approveRegistrationMutation = useMutation({
@@ -299,7 +301,7 @@ export const TenantsPage: React.FC = () => {
       setProvisionTenant(null);
       setProvisionPlanId('');
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to approve registration'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to approve registration')),
   });
 
   const assignPlanMutation = useMutation({
@@ -312,7 +314,7 @@ export const TenantsPage: React.FC = () => {
       setAssignPlanTenant(null);
       setAssignPlanId('');
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to assign subscription plan'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to assign subscription plan')),
   });
 
   const registrationLinkMutation = useMutation({
@@ -321,8 +323,8 @@ export const TenantsPage: React.FC = () => {
       setRegistrationLink({ url: `${window.location.origin}/register-tenant?token=${encodeURIComponent(data.token)}`, expiresAtUtc: data.expiresAtUtc });
       setLinkCopied(false);
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message || err.message || 'Failed to generate registration link');
+    onError: (err: unknown) => {
+      toast.error(getApiErrorMessage(err, 'Failed to generate registration link'));
       setLinkTenant(null);
     },
   });
@@ -334,7 +336,7 @@ export const TenantsPage: React.FC = () => {
       toast.success('Trial started');
       setTrialDate('');
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to start trial'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to start trial')),
   });
 
   const setExpiryMutation = useMutation({
@@ -344,7 +346,7 @@ export const TenantsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-license', licenseTenant?.id] });
       toast.success('License expiry updated');
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to update license expiry'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update license expiry')),
   });
 
   const suspendMutation = useMutation({
@@ -353,7 +355,7 @@ export const TenantsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-license', licenseTenant?.id] });
       toast.success('Tenant license suspended');
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to suspend license'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to suspend license')),
   });
 
   const unsuspendMutation = useMutation({
@@ -362,7 +364,7 @@ export const TenantsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-license', licenseTenant?.id] });
       toast.success('Tenant license unsuspended');
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to unsuspend license'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to unsuspend license')),
   });
 
   const addDomainMutation = useMutation({
@@ -372,7 +374,7 @@ export const TenantsPage: React.FC = () => {
       toast.success('Domain added');
       setNewDomain('');
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to add domain'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to add domain')),
   });
 
   const removeDomainMutation = useMutation({
@@ -381,7 +383,7 @@ export const TenantsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-domains', domainsTenant?.id] });
       toast.success('Domain removed');
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to remove domain'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to remove domain')),
   });
 
   const exportMutation = useMutation({
@@ -396,7 +398,7 @@ export const TenantsPage: React.FC = () => {
       URL.revokeObjectURL(url);
       toast.success('Tenant data exported');
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to export tenant data'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to export tenant data')),
   });
 
   const purgeMutation = useMutation({
@@ -407,19 +409,19 @@ export const TenantsPage: React.FC = () => {
       setPurgeTenant(null);
       setPurgeConfirmSlug('');
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to purge tenant'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to purge tenant')),
   });
 
   const resyncMutation = useMutation({
     mutationFn: (id: number) => tenantApi.resyncCatalog(id),
     onSuccess: () => toast.success('Tenant catalog resynced'),
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to resync catalog'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to resync catalog')),
   });
 
   const resyncAllMutation = useMutation({
     mutationFn: () => tenantApi.resyncAllCatalogs(),
     onSuccess: (result) => toast.success(`Resynced ${result.resyncedCount} tenant(s), skipped ${result.skippedCount} unprovisioned`),
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to resync all catalogs'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to resync all catalogs')),
   });
 
   const getStatusBadge = (isActive: boolean) => (
@@ -539,7 +541,7 @@ export const TenantsPage: React.FC = () => {
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Register New Tenant" size="md">
         <DynamicForm
           fields={createFields}
-          onSubmit={(data) => createMutation.mutate({ slug: data.slug, name: data.name })}
+          onSubmit={(data) => createMutation.mutate({ slug: String(data.slug), name: String(data.name) })}
           submitLabel="Create Tenant"
           onCancel={() => setShowAddModal(false)}
           isLoading={createMutation.isPending}
@@ -551,7 +553,7 @@ export const TenantsPage: React.FC = () => {
           <DynamicForm
             key={editTenant.id}
             fields={editFields}
-            onSubmit={(data) => updateMutation.mutate({ id: editTenant.id, dto: { name: data.name } })}
+            onSubmit={(data) => updateMutation.mutate({ id: editTenant.id, dto: { name: String(data.name) } })}
             submitLabel="Update Tenant"
             onCancel={() => setEditTenant(null)}
             isLoading={updateMutation.isPending}
@@ -618,7 +620,7 @@ export const TenantsPage: React.FC = () => {
                   {pendingRegistration.fullName} ({pendingRegistration.email})
                 </p>
                 <p className="text-xs text-blue-600 dark:text-blue-500 mt-1">
-                  Submitted {new Date(pendingRegistration.submittedAtUtc).toLocaleString()}
+                  Submitted {formatDateTime(pendingRegistration.submittedAtUtc)}
                 </p>
               </div>
             ) : null}
@@ -712,7 +714,7 @@ export const TenantsPage: React.FC = () => {
               </button>
             </div>
             <p className="text-xs text-gray-400">
-              Expires {new Date(registrationLink.expiresAtUtc).toLocaleString()}
+              Expires {formatDateTime(registrationLink.expiresAtUtc)}
             </p>
             <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
               <button

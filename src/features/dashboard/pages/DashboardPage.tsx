@@ -6,6 +6,7 @@ import {
 import { tenantOverviewApi } from '../../../core/api/services/tenant-overview.api';
 import { LicenseStatus } from '../../../core/api/services/tenant-self.api';
 import { Loader } from '../../../components/ui/Loader/Loader';
+import { formatDate } from '../../../core/i18n/format';
 
 const LICENSE_LABEL: Record<LicenseStatus, string> = {
   [LicenseStatus.Active]: 'Active',
@@ -22,9 +23,6 @@ const LICENSE_TONE: Record<LicenseStatus, string> = {
   [LicenseStatus.Expired]: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
   [LicenseStatus.Suspended]: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
 };
-
-const formatDate = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : null;
 
 const daysUntil = (iso: string | null) => {
   if (!iso) return null;
@@ -56,7 +54,7 @@ export const DashboardPage: React.FC = () => {
 
   const enabledModules = data.modules.filter(m => m.isEnabled);
   const expiryIso = data.licenseStatus === LicenseStatus.Trial ? data.trialEndsAtUtc : data.licenseExpiresAtUtc;
-  const expiryDate = formatDate(expiryIso);
+  const expiryDate = expiryIso ? formatDate(expiryIso) : null;
   const remainingDays = daysUntil(expiryIso);
 
   // Only surfaced when it is genuinely close, so it stays meaningful instead of becoming furniture.

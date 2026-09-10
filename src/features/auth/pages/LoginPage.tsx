@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { LogIn, ArrowLeft, Mail } from 'lucide-react';
 import { useAuthStore } from '../store/auth.store';
 import { toast } from '../../../components/ui/Toast/toast.store';
+import { getApiErrorMessage } from '../../../core/utils/error';
 import { AppConfig } from '../../../core/config/app.config';
 import { AuthService } from '../../../core/services/impl/auth.service';
 
@@ -26,7 +27,7 @@ export const LoginPage: React.FC = () => {
   });
   const requiresTenantSlug = loginConfig?.requiresTenantSlug ?? true;
 
-  const from = (location.state as any)?.from?.pathname || AppConfig.auth.defaultRedirect;
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || AppConfig.auth.defaultRedirect;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,8 +38,8 @@ export const LoginPage: React.FC = () => {
       });
       toast.success('Login successful!');
       navigate(from, { replace: true });
-    } catch (error: any) {
-      toast.error(error.message || 'Login failed. Please try again.');
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, 'Login failed. Please try again.'));
     }
   };
 
@@ -51,8 +52,8 @@ export const LoginPage: React.FC = () => {
       toast.success(msg || 'Password reset link sent to your email');
       setShowForgotPassword(false);
       setForgotEmail('');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to send reset email');
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, 'Failed to send reset email'));
     } finally {
       setForgotLoading(false);
     }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getApiErrorMessage } from '../../../core/utils/error';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Send, AlertCircle, Clock } from 'lucide-react';
@@ -22,7 +23,7 @@ export const RegisterTenantPage: React.FC = () => {
   const submitMutation = useMutation({
     mutationFn: () => tenantRegistrationApi.submit({ token, fullName: form.fullName, email: form.email, password: form.password }),
     onSuccess: () => setJustSubmitted(true),
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to submit registration'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to submit registration')),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,7 +57,7 @@ export const RegisterTenantPage: React.FC = () => {
         <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Link invalid or expired</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          {(infoError as any)?.response?.data?.message || (infoError as any)?.message || 'This registration link is no longer valid.'}
+          {getApiErrorMessage(infoError, 'This registration link is no longer valid.')}
         </p>
         <Link to="/login" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Back to Sign In</Link>
       </div>

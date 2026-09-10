@@ -8,6 +8,8 @@ import { DynamicForm, FormField } from '../../../components/form/DynamicForm';
 import { toast } from '../../../components/ui/Toast/toast.store';
 import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
+import { getApiErrorMessage } from '../../../core/utils/error';
+import { asText, asOptionalText, asOptionalNumber } from '../../../core/utils/form';
 
 interface MenuDto {
   id: number;
@@ -40,11 +42,11 @@ class MenuCrudApi extends BaseRepository {
     return res.data;
   }
   async update(id: number, dto: CreateMenuDto): Promise<void> {
-    const res = await this.put<ApiResponse<any>>(`/${id}`, dto);
+    const res = await this.put<ApiResponse<unknown>>(`/${id}`, dto);
     if (!res.success) throw new Error(res.message);
   }
   async remove(id: number): Promise<void> {
-    await this.delete<any>(`/${id}`);
+    await this.delete<void>(`/${id}`);
   }
 }
 
@@ -96,7 +98,7 @@ export const MenuPage: React.FC = () => {
       toast.success('Menu item created successfully');
       setShowAddModal(false);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to create menu item'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to create menu item')),
   });
 
   const updateMutation = useMutation({
@@ -107,7 +109,7 @@ export const MenuPage: React.FC = () => {
       toast.success('Menu item updated successfully');
       setEditItem(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to update menu item'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update menu item')),
   });
 
   const deleteMutation = useMutation({
@@ -118,20 +120,20 @@ export const MenuPage: React.FC = () => {
       toast.success('Menu item deleted successfully');
       setDeleteId(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to delete menu item'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to delete menu item')),
   });
 
   const columns: Column<MenuDto>[] = [
     { key: 'id', label: 'ID', width: '60px' },
     { key: 'title', label: 'Title', sortable: true },
     { key: 'url', label: 'URL', sortable: true, render: (val) => val ? (
-      <code className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">{val}</code>
+      <code className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">{String(val)}</code>
     ) : <span className="text-xs text-gray-400">-</span> },
     { key: 'icon', label: 'Icon', render: (val) => (
-      <span className="text-xs text-gray-500 dark:text-gray-400">{val || '-'}</span>
+      <span className="text-xs text-gray-500 dark:text-gray-400">{val ? String(val) : '-'}</span>
     )},
     { key: 'requiredPermission', label: 'Permission', render: (val) => val ? (
-      <span className="px-2 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">{val}</span>
+      <span className="px-2 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">{String(val)}</span>
     ) : <span className="text-xs text-gray-400">Public</span>},
     { key: 'parentMenuId', label: 'Parent', width: '80px', render: (val) => {
       if (!val) return <span className="text-xs text-gray-400">Root</span>;
@@ -166,26 +168,26 @@ export const MenuPage: React.FC = () => {
     { name: 'parentMenuId', label: 'Parent Menu', type: 'select', options: parentOptions, defaultValue: editItem?.parentMenuId || 0 },
   ];
 
-  const handleCreate = (data: Record<string, any>) => {
+  const handleCreate = (data: Record<string, unknown>) => {
     createMutation.mutate({
-      title: data.title,
-      url: data.url || null,
-      icon: data.icon || null,
-      requiredPermission: data.requiredPermission || null,
-      parentMenuId: data.parentMenuId ? Number(data.parentMenuId) : null,
+      title: asText(data.title),
+      url: asOptionalText(data.url),
+      icon: asOptionalText(data.icon),
+      requiredPermission: asOptionalText(data.requiredPermission),
+      parentMenuId: asOptionalNumber(data.parentMenuId),
     });
   };
 
-  const handleUpdate = (data: Record<string, any>) => {
+  const handleUpdate = (data: Record<string, unknown>) => {
     if (!editItem) return;
     updateMutation.mutate({
       id: editItem.id,
       dto: {
-        title: data.title,
-        url: data.url || null,
-        icon: data.icon || null,
-        requiredPermission: data.requiredPermission || null,
-        parentMenuId: data.parentMenuId ? Number(data.parentMenuId) : null,
+        title: asText(data.title),
+        url: asOptionalText(data.url),
+        icon: asOptionalText(data.icon),
+        requiredPermission: asOptionalText(data.requiredPermission),
+        parentMenuId: asOptionalNumber(data.parentMenuId),
       },
     });
   };

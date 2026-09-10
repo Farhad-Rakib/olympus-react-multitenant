@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Save, Download, Upload } from 'lucide-react';
 import { useSettingsStore } from '../store/settings.store';
 import { toast } from '../../../components/ui/Toast/toast.store';
+import { formatDateTime } from '../../../core/i18n/format';
 
 export const GeneralSettingsPage: React.FC = () => {
   const { general, updateGeneral, exportAsJSON, lastSaved } = useSettingsStore();
@@ -61,7 +62,7 @@ export const GeneralSettingsPage: React.FC = () => {
             Manage your application configuration
             {lastSaved && (
               <span className="ml-2 text-xs text-gray-400">
-                Last saved: {new Date(lastSaved).toLocaleString()}
+                Last saved: {formatDateTime(lastSaved)}
               </span>
             )}
           </p>

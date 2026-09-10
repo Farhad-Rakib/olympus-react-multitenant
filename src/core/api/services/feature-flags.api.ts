@@ -32,7 +32,7 @@ class FeatureFlagsApi extends BaseRepository {
   }
 
   async remove(id: number): Promise<void> {
-    const res = await this.delete<ApiResponse<any>>(`/${id}`);
+    const res = await this.delete<ApiResponse<unknown>>(`/${id}`);
     if (!res.success) throw new Error(res.message);
   }
 }

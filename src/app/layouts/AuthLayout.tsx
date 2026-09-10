@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
+import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Loader } from '../../components/ui/Loader/Loader';
 import { AuthService } from '../../core/services/impl/auth.service';
 import { useSiteSettingsStore } from '../../core/stores/site-settings.store';
 
@@ -53,7 +55,9 @@ export const AuthLayout: React.FC = () => {
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
-            <Outlet />
+            <Suspense fallback={<Loader />}>
+              <Outlet />
+            </Suspense>
           </div>
         </div>
       </div>

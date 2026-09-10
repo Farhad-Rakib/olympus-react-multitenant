@@ -1,0 +1,47 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "loading": "Loading...",
+    "noResults": "No results found",
+    "confirm": "Confirm",
+    "close": "Close",
+    "actions": "Actions",
+    "retry": "Try again",
+    "reload": "Reload"
+  },
+  "errors": {
+    "generic": "Something went wrong",
+    "renderFailed": "This part of the page failed to load. Reloading usually fixes it. If it keeps happening, let your administrator know.",
+    "loadFailed": "We couldn't load this. Please refresh and try again.",
+    "forbidden": "You don't have permission to view this.",
+    "notFound": "We couldn't find that page."
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?"
+  },
+  "dashboard": {
+    "title": "Your workspace at a glance",
+    "plan": "Plan",
+    "users": "Users",
+    "activeModules": "Active modules",
+    "seatUsage": "Seat usage",
+    "yourModules": "Your modules",
+    "noPlan": "No plan assigned"
+  },
+  "license": {
+    "active": "Active",
+    "trial": "Trial",
+    "gracePeriod": "Grace period",
+    "expired": "Expired",
+    "suspended": "Suspended"
+  }
+}

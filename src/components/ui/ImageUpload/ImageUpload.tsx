@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { getApiErrorMessage } from '../../../core/utils/error';
 
 interface ImageUploadProps {
   value?: string;
@@ -63,8 +64,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     try {
       const url = await onUpload(file);
       onChange(url);
-    } catch (err: any) {
-      setError(err?.message || 'Upload failed');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Upload failed'));
     } finally {
       setIsUploading(false);
     }

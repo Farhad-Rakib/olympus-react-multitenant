@@ -4,6 +4,7 @@ import { Search, Shield } from 'lucide-react';
 import { toast } from '../../../components/ui/Toast/toast.store';
 import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
+import { getApiErrorMessage } from '../../../core/utils/error';
 
 interface RoleDto {
   id: number;
@@ -101,7 +102,7 @@ export const RolePermissionsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['role-permissions-toggle', selectedRoleId] });
       queryClient.invalidateQueries({ queryKey: ['roles'] });
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to update permission'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update permission')),
     onSettled: () => setPendingId(null),
   });
 

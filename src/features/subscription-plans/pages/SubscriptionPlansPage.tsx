@@ -7,6 +7,7 @@ import { Modal } from '../../../components/ui/Modal/Modal';
 import { toast } from '../../../components/ui/Toast/toast.store';
 import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
+import { getApiErrorMessage } from '../../../core/utils/error';
 
 export interface SubscriptionPlanDto {
   id: number;
@@ -55,7 +56,7 @@ class SubscriptionPlanApi extends BaseRepository {
     return res.data;
   }
   async remove(id: number): Promise<void> {
-    await this.delete<any>(`/${id}`);
+    await this.delete<void>(`/${id}`);
   }
 }
 
@@ -226,7 +227,7 @@ export const SubscriptionPlansPage: React.FC = () => {
       toast.success('Subscription plan created successfully');
       setShowAddModal(false);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to create subscription plan'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to create subscription plan')),
   });
 
   const updateMutation = useMutation({
@@ -236,7 +237,7 @@ export const SubscriptionPlansPage: React.FC = () => {
       toast.success('Subscription plan updated successfully');
       setEditPlan(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to update subscription plan'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update subscription plan')),
   });
 
   const deleteMutation = useMutation({
@@ -246,7 +247,7 @@ export const SubscriptionPlansPage: React.FC = () => {
       toast.success('Subscription plan deleted successfully');
       setDeletePlanId(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to delete subscription plan'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to delete subscription plan')),
   });
 
   const columns: Column<SubscriptionPlanDto>[] = [

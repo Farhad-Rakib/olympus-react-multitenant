@@ -7,6 +7,8 @@ import { DynamicForm, FormField } from '../../../components/form/DynamicForm';
 import { toast } from '../../../components/ui/Toast/toast.store';
 import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
+import { getApiErrorMessage } from '../../../core/utils/error';
+import { asText, asOptionalText } from '../../../core/utils/form';
 
 interface UserDto {
   id: number;
@@ -42,8 +44,8 @@ class UsersApi extends BaseRepository {
 
 class AuthRegisterApi extends BaseRepository {
   constructor() { super('/Auth'); }
-  async register(dto: { fullName: string; email: string; password: string; roles: string[] }): Promise<any> {
-    const res = await this.post<ApiResponse<any>>('/register', dto);
+  async register(dto: { fullName: string; email: string; password: string; roles: string[] }): Promise<unknown> {
+    const res = await this.post<ApiResponse<unknown>>('/register', dto);
     if (!res.success) throw new Error(res.message);
     return res.data;
   }
@@ -86,7 +88,7 @@ export const UsersPage: React.FC = () => {
       toast.success('User created successfully');
       setShowAddModal(false);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to create user'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to create user')),
   });
 
   const updateRolesMutation = useMutation({
@@ -97,7 +99,7 @@ export const UsersPage: React.FC = () => {
       toast.success('User roles updated');
       setEditUser(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to update roles'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update roles')),
   });
 
   const getStatusBadge = (isActive: boolean) => (
@@ -175,16 +177,16 @@ export const UsersPage: React.FC = () => {
     },
   ] : [];
 
-  const handleCreate = (data: Record<string, any>) => {
+  const handleCreate = (data: Record<string, unknown>) => {
     createMutation.mutate({
-      fullName: data.fullName,
-      email: data.email,
-      password: data.password,
-      roles: data.role ? [data.role] : [],
+      fullName: asText(data.fullName),
+      email: asText(data.email),
+      password: asText(data.password),
+      roles: asOptionalText(data.role) ? [asText(data.role)] : [],
     });
   };
 
-  const handleUpdateRoles = (data: Record<string, any>) => {
+  const handleUpdateRoles = (data: Record<string, unknown>) => {
     if (!editUser) return;
     const roleIds = data.roleIds ? [Number(data.roleIds)] : [];
     updateRolesMutation.mutate({ userId: editUser.id, roleIds });

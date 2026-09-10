@@ -5,6 +5,7 @@ import { featureFlagsApi, FeatureFlagDto } from '../../../core/api/services/feat
 import { toast } from '../../../components/ui/Toast/toast.store';
 import { ConfirmDialog } from '../../../components/ui/Dialog/ConfirmDialog';
 import { Modal } from '../../../components/ui/Modal/Modal';
+import { getApiErrorMessage } from '../../../core/utils/error';
 
 const ToggleSwitch: React.FC<{ checked: boolean; disabled?: boolean; onChange: () => void }> = ({ checked, disabled, onChange }) => (
   <button
@@ -46,7 +47,7 @@ export const FeatureFlagsPage: React.FC = () => {
       setEditItem(null);
       setFormData({ key: '', isEnabled: true, rolloutPercentage: '100' });
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to save feature flag'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to save feature flag')),
   });
 
   const deleteMutation = useMutation({
@@ -56,7 +57,7 @@ export const FeatureFlagsPage: React.FC = () => {
       toast.success('Feature flag deleted');
       setDeleteId(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to delete feature flag'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to delete feature flag')),
   });
 
   // Toggling an existing flag's IsEnabled directly from the list re-sends its current
@@ -66,7 +67,7 @@ export const FeatureFlagsPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to update feature flag'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update feature flag')),
   });
 
   const openEditModal = (flag: FeatureFlagDto) => {

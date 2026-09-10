@@ -11,7 +11,7 @@ interface FormDrawerProps {
   title: string;
   description?: string;
   fields: FormField[];
-  onSubmit: (data: Record<string, any>) => void | Promise<void>;
+  onSubmit: (data: Record<string, unknown>) => void | Promise<void>;
   submitLabel?: string;
   isLoading?: boolean;
   position?: DrawerPosition;

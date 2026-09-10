@@ -8,6 +8,7 @@ import { DynamicForm, FormField } from '../../../components/form/DynamicForm';
 import { toast } from '../../../components/ui/Toast/toast.store';
 import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
+import { getApiErrorMessage } from '../../../core/utils/error';
 
 interface PermissionDto {
   id: number;
@@ -33,7 +34,7 @@ class PermissionApi extends BaseRepository {
     return res.data;
   }
   async remove(id: number): Promise<void> {
-    await this.delete<any>(`/${id}`);
+    await this.delete<void>(`/${id}`);
   }
 }
 
@@ -58,7 +59,7 @@ export const PermissionsPage: React.FC = () => {
       toast.success('Permission created successfully');
       setShowAddModal(false);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to create permission'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to create permission')),
   });
 
   const updateMutation = useMutation({
@@ -68,7 +69,7 @@ export const PermissionsPage: React.FC = () => {
       toast.success('Permission updated successfully');
       setEditItem(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to update permission'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update permission')),
   });
 
   const deleteMutation = useMutation({
@@ -78,7 +79,7 @@ export const PermissionsPage: React.FC = () => {
       toast.success('Permission deleted successfully');
       setDeleteId(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to delete permission'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to delete permission')),
   });
 
   const columns: Column<PermissionDto>[] = [
@@ -125,7 +126,7 @@ export const PermissionsPage: React.FC = () => {
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Permission" size="md">
         <DynamicForm
           fields={createFields}
-          onSubmit={(data) => createMutation.mutate({ name: data.name, description: data.description || '' })}
+          onSubmit={(data) => createMutation.mutate({ name: String(data.name), description: String(data.description ?? '') })}
           submitLabel="Create Permission"
           onCancel={() => setShowAddModal(false)}
           isLoading={createMutation.isPending}
@@ -137,7 +138,7 @@ export const PermissionsPage: React.FC = () => {
           <DynamicForm
             key={editItem.id}
             fields={editFields}
-            onSubmit={(data) => updateMutation.mutate({ id: editItem.id, dto: { name: data.name, description: data.description || '' } })}
+            onSubmit={(data) => updateMutation.mutate({ id: editItem.id, dto: { name: String(data.name), description: String(data.description ?? '') } })}
             submitLabel="Update Permission"
             onCancel={() => setEditItem(null)}
             isLoading={updateMutation.isPending}

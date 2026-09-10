@@ -7,6 +7,7 @@ import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
 import { tenantApi } from '../../tenants/pages/TenantsPage';
 import { useAuthStore } from '../../auth/store/auth.store';
+import { formatDateTime } from '../../../core/i18n/format';
 
 // Order must match the backend AuditAction enum exactly (Domain/Enums/AuditAction.cs) --
 // `action` on AuditLogDto is the raw numeric enum value, indexed into this array.
@@ -130,7 +131,7 @@ export const AuditLogsPage: React.FC = () => {
       key: 'createdAt',
       label: 'Time',
       width: '180px',
-      render: (_, log) => new Date(log.createdAt).toLocaleString(),
+      render: (_, log) => formatDateTime(log.createdAt),
     },
     {
       key: 'action',
@@ -287,7 +288,7 @@ export const AuditLogsPage: React.FC = () => {
               </div>
               <div className="col-span-2">
                 <span className="text-gray-500 dark:text-gray-400">Timestamp</span>
-                <p className="text-gray-900 dark:text-white">{new Date(viewLog.createdAt).toLocaleString()}</p>
+                <p className="text-gray-900 dark:text-white">{formatDateTime(viewLog.createdAt)}</p>
               </div>
             </div>
 

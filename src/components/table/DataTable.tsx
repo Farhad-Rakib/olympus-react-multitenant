@@ -17,7 +17,7 @@ export interface Column<T> {
   key: keyof T | string;
   label: string;
   sortable?: boolean;
-  render?: (value: any, row: T) => React.ReactNode;
+  render?: (value: unknown, row: T) => React.ReactNode;
   width?: string;
 }
 
@@ -54,7 +54,10 @@ interface DataTableProps<T> {
   onRetry?: () => void;
 }
 
-export function DataTable<T extends Record<string, any>>({
+// `object` rather than Record<string, unknown>: a TypeScript interface has no implicit index
+// signature, so every DTO in this codebase would fail a Record constraint. Cell values are read
+// through an explicit `keyof T` cast at the indexing site below.
+export function DataTable<T extends object>({
   columns,
   data,
   isLoading,

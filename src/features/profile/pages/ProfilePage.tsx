@@ -6,6 +6,7 @@ import { fileApi } from '../../../core/api/services/file.api';
 import { AuthService } from '../../../core/services/impl/auth.service';
 import { toast } from '../../../components/ui/Toast/toast.store';
 import { ImageUpload } from '../../../components/ui/ImageUpload/ImageUpload';
+import { getApiErrorMessage } from '../../../core/utils/error';
 
 const authService = new AuthService();
 
@@ -50,7 +51,7 @@ export const ProfilePage: React.FC = () => {
       toast.success('Profile updated successfully');
       setIsEditing(false);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to update profile'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update profile')),
   });
 
   const changePasswordMutation = useMutation({
@@ -67,7 +68,7 @@ export const ProfilePage: React.FC = () => {
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setShowChangePassword(false);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to change password'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to change password')),
   });
 
   const handleUploadImage = async (file: File): Promise<string> => {

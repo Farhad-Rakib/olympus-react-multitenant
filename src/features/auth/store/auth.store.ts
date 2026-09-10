@@ -6,6 +6,7 @@ import { menuApi } from '../../../core/api/services/menu.api';
 import { AppConfig } from '../../../core/config/app.config';
 import { queryClient } from '../../../app/providers/AppProviders';
 import { useSiteSettingsStore } from '../../../core/stores/site-settings.store';
+import { getApiErrorMessage } from '../../../core/utils/error';
 
 interface TokenPayload {
   sub?: string;
@@ -14,8 +15,15 @@ interface TokenPayload {
   role?: string;
   permissions?: string[];
   tenant_id?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
+
+// Claims are attacker-influenced data from a decoded token, so the shape is checked rather than
+// asserted. The backend has emitted both "permissions" and "permission" over time; both are read.
+const readPermissions = (payload: TokenPayload): string[] => {
+  const raw = payload.permissions ?? payload.permission;
+  return Array.isArray(raw) ? raw.filter((p): p is string => typeof p === 'string') : [];
+};
 
 interface AuthState {
   accessToken: string | null;
@@ -76,8 +84,8 @@ export const useAuthStore = create<AuthState>()(
             queryKey: ['menu'],
             queryFn: () => menuApi.getMenuItems(),
           });
-        } catch (error: any) {
-          const message = error?.response?.data?.message || error?.message || 'Login failed';
+        } catch (error: unknown) {
+          const message = getApiErrorMessage(error, 'Login failed');
           set({
             error: message,
             isLoading: false,
@@ -124,16 +132,14 @@ export const useAuthStore = create<AuthState>()(
       hasAnyPermission: (permissions: string[]): boolean => {
         const { tokenPayload } = get();
         if (!tokenPayload) return false;
-        const perms: string[] = tokenPayload.permissions || tokenPayload.permission || [];
-        if (!Array.isArray(perms)) return false;
+        const perms = readPermissions(tokenPayload);
         return permissions.some(p => perms.includes(p));
       },
 
       hasAllPermissions: (permissions: string[]): boolean => {
         const { tokenPayload } = get();
         if (!tokenPayload) return false;
-        const perms: string[] = tokenPayload.permissions || tokenPayload.permission || [];
-        if (!Array.isArray(perms)) return false;
+        const perms = readPermissions(tokenPayload);
         return permissions.every(p => perms.includes(p));
       },
     }),

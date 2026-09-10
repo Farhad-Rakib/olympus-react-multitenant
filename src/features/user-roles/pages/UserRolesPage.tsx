@@ -7,6 +7,7 @@ import { ApiResponse } from '../../../domain/dto/auth.dto';
 import { ConfirmDialog } from '../../../components/ui/Dialog/ConfirmDialog';
 import { Modal } from '../../../components/ui/Modal/Modal';
 import { DynamicForm, FormField } from '../../../components/form/DynamicForm';
+import { getApiErrorMessage } from '../../../core/utils/error';
 
 interface UserDto {
   id: number;
@@ -89,7 +90,7 @@ export const UserRolesPage: React.FC = () => {
       toast.success('Role added to user');
       setShowAddModal(false);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to add role'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to add role')),
   });
 
   const removeMutation = useMutation({
@@ -101,7 +102,7 @@ export const UserRolesPage: React.FC = () => {
       toast.success('Role removed from user');
       setRemoveTarget(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to remove role'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to remove role')),
   });
 
   const assignedIds = new Set(userRoles.map(r => r.id));

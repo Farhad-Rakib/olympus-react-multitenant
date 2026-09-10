@@ -74,7 +74,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   });
 
   const displayName = profile?.fullName || tokenPayload?.name || tokenPayload?.email || 'User';
-  const displayRole = profile?.roles?.[0] || tokenPayload?.role || tokenPayload?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || '';
+  // The long key is the WS-Federation role claim some tokens carry instead of "role". Indexed
+  // claims are typed unknown, so the result is coerced rather than assumed to be a string.
+  const roleClaim = tokenPayload?.role ?? tokenPayload?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+  const displayRole = profile?.roles?.[0] || (typeof roleClaim === 'string' ? roleClaim : '');
   const initials = displayName
     .split(' ')
     .map((p: string) => p[0])
