@@ -8,6 +8,7 @@ import { useNotificationStore, Notification } from '../../../core/stores/notific
 import { userApi } from '../../../core/api/services/user.api';
 import { TenantSwitcher } from './TenantSwitcher';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { CacheClearButton } from './CacheClearButton';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -133,6 +134,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           >
             {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
+          <CacheClearButton />
 
           <div ref={notifRef} className="relative">
             <button
