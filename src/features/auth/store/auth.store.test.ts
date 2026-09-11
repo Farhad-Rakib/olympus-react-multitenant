@@ -18,6 +18,16 @@ describe('auth store: acting tenant (platform admin override)', () => {
     useAuthStore.setState({ tokenPayload: platformAdminPayload, tenantSlug: 'home', actingTenantSlug: null });
   });
 
+  it('treats a platform admin as holding every permission, like the server handler', () => {
+    useAuthStore.setState({ tokenPayload: platformAdminPayload });
+    expect(useAuthStore.getState().hasPermission('system.cache.flush')).toBe(true);
+    expect(useAuthStore.getState().hasAnyPermission(['x.y'])).toBe(true);
+    expect(useAuthStore.getState().hasAllPermissions(['x.y', 'z.w'])).toBe(true);
+    useAuthStore.setState({ tokenPayload: { ...platformAdminPayload, platform_admin: undefined, permissions: ['users.read'] } });
+    expect(useAuthStore.getState().hasPermission('system.cache.flush')).toBe(false);
+    expect(useAuthStore.getState().hasPermission('users.read')).toBe(true);
+  });
+
   it('reads the platform_admin claim the middleware checks', () => {
     expect(useAuthStore.getState().isPlatformAdmin()).toBe(true);
 

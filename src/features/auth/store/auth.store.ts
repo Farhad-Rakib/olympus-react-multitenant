@@ -146,17 +146,21 @@ export const useAuthStore = create<AuthState>()(
 
       clearError: () => set({ error: null }),
 
+      // Mirrors the server's PermissionAuthorizationHandler: a platform super admin (the
+      // platform_admin claim, a user flag rather than a role) passes every permission check, so
+      // their token carries no permissions array. Without this shortcut the UI would hide
+      // controls from exactly the user the server lets use them.
       hasPermission: (permission: string): boolean => {
         const { tokenPayload } = get();
         if (!tokenPayload) return false;
-        const perms = tokenPayload.permissions || tokenPayload.permission || [];
-        if (Array.isArray(perms)) return perms.includes(permission);
-        return false;
+        if (tokenPayload.platform_admin === 'true') return true;
+        return readPermissions(tokenPayload).includes(permission);
       },
 
       hasAnyPermission: (permissions: string[]): boolean => {
         const { tokenPayload } = get();
         if (!tokenPayload) return false;
+        if (tokenPayload.platform_admin === 'true') return true;
         const perms = readPermissions(tokenPayload);
         return permissions.some(p => perms.includes(p));
       },
@@ -164,6 +168,7 @@ export const useAuthStore = create<AuthState>()(
       hasAllPermissions: (permissions: string[]): boolean => {
         const { tokenPayload } = get();
         if (!tokenPayload) return false;
+        if (tokenPayload.platform_admin === 'true') return true;
         const perms = readPermissions(tokenPayload);
         return permissions.every(p => perms.includes(p));
       },
