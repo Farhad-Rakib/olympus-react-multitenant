@@ -121,6 +121,7 @@
     "language": "Language",
     "newLanguage": "Add a language",
     "newLanguagePlaceholder": "BCP 47 tag, e.g. fr or pt-br",
+    "newLanguageHint": "Enter a language code (2–3 letters, optional region, e.g. bn, bn-bd, fr) — Add enables once the code is valid. English is built in.",
     "add": "Add",
     "key": "Key",
     "english": "English (default)",

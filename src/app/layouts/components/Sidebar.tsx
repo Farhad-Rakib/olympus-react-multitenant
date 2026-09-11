@@ -7,6 +7,7 @@ import {
   FileText, BarChart3, Activity, Home, Package, ShoppingCart, TrendingUp, Bell,
   Calendar, MessageSquare, User, Menu as MenuIcon, Flag, Building2, History,
   Receipt, Circle,
+  Server,
   type LucideIcon,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -36,6 +37,8 @@ const iconMap: Record<string, LucideIcon> = {
   reports: FileText,
   'chart-bar': BarChart3,
   activity: Activity,
+  shield: Shield,
+  server: Server,
   home: Home,
   products: Package,
   orders: ShoppingCart,

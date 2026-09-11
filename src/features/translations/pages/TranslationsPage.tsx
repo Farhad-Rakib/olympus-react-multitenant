@@ -147,6 +147,7 @@ export const TranslationsPage: React.FC = () => {
               placeholder={t('translations.newLanguagePlaceholder')}
               className={inputClasses}
             />
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('translations.newLanguageHint')}</p>
           </div>
           <button
             type="submit"
