@@ -82,17 +82,17 @@ export const GeneralSettingsPage: React.FC = () => {
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">Application</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className={labelCls}>Site Name</label>
-              <input value={form.siteName} onChange={(e) => setForm({ ...form, siteName: e.target.value })} className={inputCls} />
+              <label htmlFor="site-name" className={labelCls}>Site Name</label>
+              <input id="site-name" value={form.siteName} onChange={(e) => setForm({ ...form, siteName: e.target.value })} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Support Email</label>
-              <input type="email" value={form.supportEmail} onChange={(e) => setForm({ ...form, supportEmail: e.target.value })} className={inputCls} />
+              <label htmlFor="support-email" className={labelCls}>Support Email</label>
+              <input id="support-email" type="email" value={form.supportEmail} onChange={(e) => setForm({ ...form, supportEmail: e.target.value })} className={inputCls} />
             </div>
           </div>
           <div>
-            <label className={labelCls}>Site Description</label>
-            <textarea rows={3} value={form.siteDescription} onChange={(e) => setForm({ ...form, siteDescription: e.target.value })} className={`${inputCls} resize-none`} />
+            <label htmlFor="site-description" className={labelCls}>Site Description</label>
+            <textarea id="site-description" rows={3} value={form.siteDescription} onChange={(e) => setForm({ ...form, siteDescription: e.target.value })} className={`${inputCls} resize-none`} />
           </div>
         </div>
 
@@ -100,8 +100,8 @@ export const GeneralSettingsPage: React.FC = () => {
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">Localization</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div>
-              <label className={labelCls}>Timezone</label>
-              <select value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })} className={inputCls}>
+              <label htmlFor="timezone" className={labelCls}>Timezone</label>
+              <select id="timezone" value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })} className={inputCls}>
                 <option value="UTC">UTC</option>
                 <option value="America/New_York">Eastern Time</option>
                 <option value="America/Chicago">Central Time</option>
@@ -113,16 +113,16 @@ export const GeneralSettingsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className={labelCls}>Date Format</label>
-              <select value={form.dateFormat} onChange={(e) => setForm({ ...form, dateFormat: e.target.value })} className={inputCls}>
+              <label htmlFor="date-format" className={labelCls}>Date Format</label>
+              <select id="date-format" value={form.dateFormat} onChange={(e) => setForm({ ...form, dateFormat: e.target.value })} className={inputCls}>
                 <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                 <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                 <option value="YYYY-MM-DD">YYYY-MM-DD</option>
               </select>
             </div>
             <div>
-              <label className={labelCls}>Language</label>
-              <select value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })} className={inputCls}>
+              <label htmlFor="language" className={labelCls}>Language</label>
+              <select id="language" value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })} className={inputCls}>
                 <option value="en">English</option>
                 <option value="es">Spanish</option>
                 <option value="fr">French</option>

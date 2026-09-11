@@ -12,7 +12,14 @@
     "close": "Close",
     "actions": "Actions",
     "retry": "Try again",
-    "reload": "Reload"
+    "reload": "Reload",
+    "manage": "Manage",
+    "current": "Current",
+    "perMonth": "/month",
+    "perYear": "/year",
+    "free": "Free",
+    "unavailable": "Unavailable",
+    "dismiss": "Dismiss"
   },
   "errors": {
     "generic": "Something went wrong",
@@ -35,13 +42,104 @@
     "activeModules": "Active modules",
     "seatUsage": "Seat usage",
     "yourModules": "Your modules",
-    "noPlan": "No plan assigned"
+    "noPlan": "No plan assigned",
+    "trialEnds": "Trial ends",
+    "renews": "Renews",
+    "noExpiry": "No expiry",
+    "seatWarning": "You are close to your plan's user limit.",
+    "includedWith": "Included with the {{plan}} plan"
   },
   "license": {
     "active": "Active",
     "trial": "Trial",
     "gracePeriod": "Grace period",
     "expired": "Expired",
-    "suspended": "Suspended"
+    "suspended": "Suspended",
+    "banner": {
+      "trial": "You're on a trial license.",
+      "gracePeriod": "Your license has expired and is in its grace period. Renew soon to avoid losing access.",
+      "expired": "Your license has expired. Most features are unavailable until it is renewed — contact your administrator.",
+      "suspended": "This tenant has been suspended. Contact your administrator.",
+      "renew": "Renew or change plan"
+    }
+  },
+  "billing": {
+    "title": "Billing",
+    "subtitle": "Your subscription, and the plans you can move to",
+    "currentPlan": "Current plan",
+    "noPlan": "No plan assigned",
+    "manageBilling": "Manage billing",
+    "manageBillingHint": "Update your payment method, download invoices or cancel in the billing portal.",
+    "subscribe": "Subscribe",
+    "switchTo": "Switch to this plan",
+    "redirecting": "Redirecting to checkout…",
+    "openingPortal": "Opening billing portal…",
+    "notAvailableTitle": "Self-service billing is not enabled",
+    "notAvailableBody": "Plans on this platform are managed by the platform administrator. Contact them to change your subscription.",
+    "provider": "Payment provider: {{provider}}",
+    "maxUsers": "Up to {{count}} users",
+    "noPlansTitle": "No plans to show",
+    "noPlansBody": "There are no purchasable plans right now.",
+    "interval": {
+      "0": "one-time / managed",
+      "1": "monthly",
+      "2": "yearly"
+    },
+    "checkoutFailed": "Could not start checkout",
+    "portalFailed": "Could not open the billing portal"
+  },
+  "tenantSwitcher": {
+    "label": "Acting as tenant",
+    "self": "My tenant",
+    "placeholder": "Switch tenant…",
+    "banner": "You are administering tenant {{tenant}}. Every request is audited.",
+    "exit": "Back to my tenant",
+    "loadFailed": "Could not load tenants"
+  },
+  "plans": {
+    "price": "Price",
+    "currency": "Currency",
+    "billingInterval": "Billing interval",
+    "externalPriceId": "Provider price ID",
+    "externalPriceIdHint": "The price/plan id in your payment provider (e.g. a Stripe price id). Required for self-service checkout.",
+    "notSold": "Not sold",
+    "interval": {
+      "none": "None (managed manually)",
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    },
+    "requestsPerMinute": "API requests / minute",
+    "requestsPerMinuteHint": "Per tenant, across all users. 0 uses the platform default."
+  },
+  "language": {
+    "label": "Language",
+    "tenantDefault": "Tenant default"
+  },
+  "translations": {
+    "title": "Translations",
+    "subtitle": "Translate the interface for your users. Anything left blank falls back to English.",
+    "language": "Language",
+    "newLanguage": "Add a language",
+    "newLanguagePlaceholder": "BCP 47 tag, e.g. fr or pt-br",
+    "add": "Add",
+    "key": "Key",
+    "english": "English (default)",
+    "translation": "Translation",
+    "search": "Search keys or text…",
+    "onlyMissing": "Only untranslated",
+    "translated": "{{done}} of {{total}} translated",
+    "save": "Save changes",
+    "saved": "Saved: {{created}} added, {{updated}} changed, {{deleted}} cleared",
+    "saveFailed": "Could not save translations",
+    "deleteLanguage": "Remove language",
+    "deleteConfirm": "Remove every translation for {{language}}? Users on this language will see English.",
+    "unsaved": "You have unsaved changes",
+    "noLanguages": "No languages yet — add one to start translating.",
+    "customKeyHint": "Keys not in the English bundle (from an older version or a custom module) are listed too."
+  },
+  "impersonation": {
+    "banner": "You are viewing as {{name}} ({{email}}). Actions are audited to your account.",
+    "expires": "Session ends {{time}}",
+    "exit": "Stop impersonating"
   }
 }

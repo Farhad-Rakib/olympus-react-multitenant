@@ -22,6 +22,8 @@ const ProfilePage = lazy(() => import('../../features/profile/pages/ProfilePage'
 const SiteSettingsPage = lazy(() => import('../../features/site-settings/pages/SiteSettingsPage').then(m => ({ default: m.SiteSettingsPage })));
 const SystemSettingsPage = lazy(() => import('../../features/system-settings/pages/SystemSettingsPage').then(m => ({ default: m.SystemSettingsPage })));
 const AuditLogsPage = lazy(() => import('../../features/audit-logs/pages/AuditLogsPage').then(m => ({ default: m.AuditLogsPage })));
+const BillingPage = lazy(() => import('../../features/billing/pages/BillingPage').then(m => ({ default: m.BillingPage })));
+const TranslationsPage = lazy(() => import('../../features/translations/pages/TranslationsPage').then(m => ({ default: m.TranslationsPage })));
 const FeatureFlagsPage = lazy(() => import('../../features/feature-flags/pages/FeatureFlagsPage').then(m => ({ default: m.FeatureFlagsPage })));
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 const ForbiddenPage = lazy(() => import('../pages/ForbiddenPage').then(m => ({ default: m.ForbiddenPage })));
@@ -103,6 +105,14 @@ export const router = createBrowserRouter([
       {
         path: 'audit-logs',
         element: <PermissionGuard permissions={['audit-logs.read']}><AuditLogsPage /></PermissionGuard>,
+      },
+      {
+        path: 'billing',
+        element: <PermissionGuard permissions={['billing.manage']}><BillingPage /></PermissionGuard>,
+      },
+      {
+        path: 'translations',
+        element: <PermissionGuard permissions={['translations.manage']}><TranslationsPage /></PermissionGuard>,
       },
       {
         path: 'feature-flags',

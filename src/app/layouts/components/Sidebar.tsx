@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
+  Languages,
   ChevronDown, ChevronRight, X, Command,
   LayoutDashboard, Users, Shield, ShieldCheck, Key, UserCheck, Settings, Sliders,
   FileText, BarChart3, Activity, Home, Package, ShoppingCart, TrendingUp, Bell,
@@ -50,6 +51,7 @@ const iconMap: Record<string, LucideIcon> = {
   building2: Building2,
   history: History,
   receipt: Receipt,
+  languages: Languages,
 };
 
 interface SidebarProps {
@@ -154,6 +156,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     <>
       {isOpen && (
         <div
+          role="presentation"
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
           onClick={onClose}
         />

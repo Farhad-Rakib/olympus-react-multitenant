@@ -1,12 +1,16 @@
 import { BaseRepository } from '../base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
 import { LicenseStatus } from './tenant-self.api';
+import { BillingInterval } from './tenant-billing.api';
 
 export interface TenantPlanDto {
   key: string;
   name: string;
   description: string;
   maxUsers: number;
+  price: number;
+  currency: string;
+  billingInterval: BillingInterval;
 }
 
 export interface TenantModuleSummaryDto {

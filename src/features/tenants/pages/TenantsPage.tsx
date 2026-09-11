@@ -633,8 +633,8 @@ export const TenantsPage: React.FC = () => {
             </p>
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subscription Plan</label>
-                <select
+                <label htmlFor="subscription-plan" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subscription Plan</label>
+                <select id="subscription-plan"
                   value={provisionPlanId}
                   onChange={(e) => setProvisionPlanId(e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -741,10 +741,10 @@ export const TenantsPage: React.FC = () => {
         </p>
         <div className="space-y-4">
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="subscription-plan-2" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Subscription Plan<span className="text-red-500 ml-1">*</span>
             </label>
-            <select
+            <select id="subscription-plan-2"
               value={assignPlanId}
               onChange={(e) => setAssignPlanId(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -800,9 +800,9 @@ export const TenantsPage: React.FC = () => {
             )}
 
             <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Start Trial</label>
+              <label htmlFor="start-trial" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Start Trial</label>
               <div className="flex gap-2">
-                <input
+                <input id="start-trial"
                   type="date"
                   value={trialDate}
                   onChange={(e) => setTrialDate(e.target.value)}
@@ -820,9 +820,9 @@ export const TenantsPage: React.FC = () => {
             </div>
 
             <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">License Expiry</label>
+              <label htmlFor="license-expiry" className="block text-sm font-medium text-gray-700 dark:text-gray-300">License Expiry</label>
               <div className="flex gap-2">
-                <input
+                <input id="license-expiry"
                   type="date"
                   value={expiryDate}
                   onChange={(e) => setExpiryDate(e.target.value)}

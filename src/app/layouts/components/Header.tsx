@@ -6,6 +6,8 @@ import { useAuthStore } from '../../../features/auth/store/auth.store';
 import { useThemeStore } from '../../../core/stores/theme.store';
 import { useNotificationStore, Notification } from '../../../core/stores/notification.store';
 import { userApi } from '../../../core/api/services/user.api';
+import { TenantSwitcher } from './TenantSwitcher';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -34,10 +36,14 @@ const NotificationItem: React.FC<{
   onRemove: (id: string) => void;
 }> = ({ n, onRead, onRemove }) => (
   <div
-    className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer ${
+    role="button"
+    tabIndex={0}
+    aria-label={n.read ? n.title : `${n.title} (unread)`}
+    className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
       !n.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
     }`}
     onClick={() => !n.read && onRead(n.id)}
+    onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !n.read) { e.preventDefault(); onRead(n.id); } }}
   >
     <div className={`w-2 h-2 mt-2 rounded-full shrink-0 ${typeStyles[n.type]}`} />
     <div className="flex-1 min-w-0">
@@ -58,7 +64,7 @@ const NotificationItem: React.FC<{
 
 export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const navigate = useNavigate();
-  const { isAuthenticated, tokenPayload, logout } = useAuthStore();
+  const { isAuthenticated, tokenPayload, logout, impersonation, endImpersonation } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
   const { notifications, unreadCount, markAsRead, markAllAsRead, removeNotification } = useNotificationStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -95,6 +101,12 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   }, []);
 
   const handleLogout = async () => {
+    // "Logout" while viewing as someone else means "back to me", not "sign me out".
+    if (impersonation) {
+      endImpersonation();
+      window.location.assign('/users');
+      return;
+    }
     await logout();
     navigate('/login');
   };
@@ -112,6 +124,8 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         <div className="flex-1 lg:ml-0 ml-4" />
 
         <div className="flex items-center gap-1">
+          <TenantSwitcher />
+          <LanguageSwitcher />
           <button
             onClick={toggleTheme}
             className="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"

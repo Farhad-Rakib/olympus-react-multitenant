@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import {
   Users, Package, CheckCircle2, XCircle, CalendarClock, AlertTriangle, Boxes,
 } from 'lucide-react';
 import { tenantOverviewApi } from '../../../core/api/services/tenant-overview.api';
 import { LicenseStatus } from '../../../core/api/services/tenant-self.api';
+import { BillingInterval } from '../../../core/api/services/tenant-billing.api';
 import { Loader } from '../../../components/ui/Loader/Loader';
-import { formatDate } from '../../../core/i18n/format';
+import { formatDate, formatCurrency } from '../../../core/i18n/format';
 
 const LICENSE_LABEL: Record<LicenseStatus, string> = {
   [LicenseStatus.Active]: 'Active',
@@ -31,6 +33,7 @@ const daysUntil = (iso: string | null) => {
 };
 
 export const DashboardPage: React.FC = () => {
+  const { t } = useTranslation();
   const { data, isLoading, error } = useQuery({
     queryKey: ['tenant-overview'],
     queryFn: () => tenantOverviewApi.getOverview(),
@@ -66,29 +69,33 @@ export const DashboardPage: React.FC = () => {
 
   const stats = [
     {
-      label: 'Plan',
-      value: data.plan?.name ?? 'No plan assigned',
+      label: t('dashboard.plan'),
+      value: data.plan
+        ? data.plan.billingInterval !== BillingInterval.None && data.plan.price > 0
+          ? `${data.plan.name} · ${formatCurrency(data.plan.price, data.plan.currency)}${data.plan.billingInterval === BillingInterval.Yearly ? '/yr' : '/mo'}`
+          : data.plan.name
+        : t('dashboard.noPlan'),
       icon: Package,
       tone: 'text-blue-600',
       bg: 'bg-blue-50 dark:bg-blue-900/20',
     },
     {
-      label: 'Users',
+      label: t('dashboard.users'),
       value: data.plan && data.plan.maxUsers > 0 ? `${data.userCount} / ${data.plan.maxUsers}` : `${data.userCount}`,
       icon: Users,
       tone: 'text-emerald-600',
       bg: 'bg-emerald-50 dark:bg-emerald-900/20',
     },
     {
-      label: 'Active modules',
+      label: t('dashboard.activeModules'),
       value: `${enabledModules.length} / ${data.modules.length}`,
       icon: Boxes,
       tone: 'text-violet-600',
       bg: 'bg-violet-50 dark:bg-violet-900/20',
     },
     {
-      label: data.licenseStatus === LicenseStatus.Trial ? 'Trial ends' : 'Renews',
-      value: expiryDate ?? 'No expiry',
+      label: data.licenseStatus === LicenseStatus.Trial ? t('dashboard.trialEnds') : t('dashboard.renews'),
+      value: expiryDate ?? t('dashboard.noExpiry'),
       icon: CalendarClock,
       tone: 'text-amber-600',
       bg: 'bg-amber-50 dark:bg-amber-900/20',
@@ -101,7 +108,7 @@ export const DashboardPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{data.name}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Your workspace at a glance
+            {t('dashboard.title')}
           </p>
         </div>
         <span className={`self-start px-3 py-1 rounded-full text-xs font-medium ${LICENSE_TONE[data.licenseStatus]}`}>
@@ -140,7 +147,7 @@ export const DashboardPage: React.FC = () => {
       {seatUsage !== null && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-medium text-gray-900 dark:text-white">Seat usage</h2>
+            <h2 className="text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.seatUsage')}</h2>
             <span className="text-sm text-gray-500 dark:text-gray-400">{seatUsage}%</span>
           </div>
           <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
@@ -151,7 +158,7 @@ export const DashboardPage: React.FC = () => {
           </div>
           {seatUsage >= 90 && (
             <p className="mt-2 text-xs text-rose-600 dark:text-rose-400">
-              You are close to your plan&apos;s user limit.
+              {t('dashboard.seatWarning')}
             </p>
           )}
         </div>
@@ -159,10 +166,10 @@ export const DashboardPage: React.FC = () => {
 
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
         <div className="p-5 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white">Your modules</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t('dashboard.yourModules')}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {data.plan
-              ? `Included with the ${data.plan.name} plan`
+              ? t('dashboard.includedWith', { plan: data.plan.name })
               : 'Modules currently granted to your workspace'}
           </p>
         </div>

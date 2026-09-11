@@ -155,6 +155,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                 : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10'
             }`}
             onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
+            role="button"
+            tabIndex={0}
+            aria-label="Choose an image to upload"
           >
             {isUploading ? (
               <div className="flex flex-col items-center gap-2 py-2">

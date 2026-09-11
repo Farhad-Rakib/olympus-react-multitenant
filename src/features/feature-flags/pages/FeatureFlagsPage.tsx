@@ -92,8 +92,8 @@ export const FeatureFlagsPage: React.FC = () => {
   const renderForm = (onSubmit: () => void, submitLabel: string, isPending: boolean, onCancel: () => void) => (
     <div className="space-y-4">
       <div>
-        <label className={labelCls}>Key</label>
-        <input
+        <label htmlFor="key" className={labelCls}>Key</label>
+        <input id="key"
           value={formData.key}
           onChange={(e) => setFormData((prev) => ({ ...prev, key: e.target.value }))}
           className={inputCls}
@@ -101,15 +101,15 @@ export const FeatureFlagsPage: React.FC = () => {
         />
       </div>
       <div className="flex items-center justify-between">
-        <label className={labelCls + ' mb-0'}>Enabled</label>
+        <label htmlFor="enabled" className={labelCls + ' mb-0'}>Enabled</label>
         <ToggleSwitch
           checked={formData.isEnabled}
           onChange={() => setFormData((prev) => ({ ...prev, isEnabled: !prev.isEnabled }))}
         />
       </div>
       <div>
-        <label className={labelCls}>Rollout Percentage</label>
-        <input
+        <label htmlFor="rollout-percentage" className={labelCls}>Rollout Percentage</label>
+        <input id="rollout-percentage"
           type="number"
           min={0}
           max={100}

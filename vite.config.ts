@@ -14,7 +14,7 @@ export default defineConfig({
     setupFiles: './src/test/setup.ts',
     // Excluded explicitly: without this vitest also collects the dependency tree under
     // node_modules and dist.
-    exclude: ['node_modules', 'dist'],
+    exclude: ['node_modules', 'dist', 'e2e/**'],
   },
   build: {
     rollupOptions: {

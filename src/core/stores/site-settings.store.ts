@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { applyLocale } from '../i18n';
+import { applyLocale, loadLanguage } from '../i18n';
+import { resolveLanguage } from './language.store';
 
 export interface SiteSettingEntry {
   id: number;
@@ -51,6 +52,8 @@ export const applyBranding = (branding: Partial<Branding>) => {
 
   if (branding.locale) {
     applyLocale(branding.locale);
+    // Tenant locale is the default UI language unless the viewer picked one explicitly.
+    void loadLanguage(resolveLanguage(branding.locale));
   }
 
   if (branding.brandColor) {

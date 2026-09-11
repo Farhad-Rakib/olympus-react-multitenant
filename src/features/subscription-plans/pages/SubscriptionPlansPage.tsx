@@ -8,6 +8,8 @@ import { toast } from '../../../components/ui/Toast/toast.store';
 import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
 import { getApiErrorMessage } from '../../../core/utils/error';
+import { formatCurrency } from '../../../core/i18n/format';
+import { BillingInterval } from '../../../core/api/services/tenant-billing.api';
 
 export interface SubscriptionPlanDto {
   id: number;
@@ -16,6 +18,11 @@ export interface SubscriptionPlanDto {
   description: string;
   maxUsers: number;
   isActive: boolean;
+  price: number;
+  currency: string;
+  billingInterval: BillingInterval;
+  externalPriceId: string | null;
+  requestsPerMinute: number;
   moduleKeys: string[];
 }
 
@@ -30,8 +37,25 @@ interface SubscriptionPlanWriteDto {
   name: string;
   description: string;
   maxUsers: number;
+  price: number;
+  currency: string;
+  billingInterval: BillingInterval;
+  externalPriceId: string | null;
+  requestsPerMinute: number;
   moduleKeys: string[];
 }
+
+const INTERVAL_OPTIONS: { value: BillingInterval; label: string }[] = [
+  { value: BillingInterval.None, label: 'None (managed manually)' },
+  { value: BillingInterval.Monthly, label: 'Monthly' },
+  { value: BillingInterval.Yearly, label: 'Yearly' },
+];
+
+const INTERVAL_SUFFIX: Record<BillingInterval, string> = {
+  [BillingInterval.None]: '',
+  [BillingInterval.Monthly]: '/mo',
+  [BillingInterval.Yearly]: '/yr',
+};
 
 class SubscriptionPlanApi extends BaseRepository {
   constructor() { super('/subscription-plans'); }
@@ -67,9 +91,17 @@ interface PlanFormValues {
   name: string;
   description: string;
   maxUsers: string;
+  price: string;
+  currency: string;
+  billingInterval: BillingInterval;
+  externalPriceId: string;
+  requestsPerMinute: string;
 }
 
-const emptyForm: PlanFormValues = { key: '', name: '', description: '', maxUsers: '' };
+const emptyForm: PlanFormValues = {
+  key: '', name: '', description: '', maxUsers: '',
+  price: '0', currency: 'USD', billingInterval: BillingInterval.None, externalPriceId: '', requestsPerMinute: '0',
+};
 
 const PlanForm: React.FC<{
   initial: PlanFormValues;
@@ -92,17 +124,34 @@ const PlanForm: React.FC<{
     });
   };
 
+  const isRecurring = form.billingInterval !== BillingInterval.None;
+  const price = Number(form.price);
+  // Mirrors SubscriptionPlan.SetPricing: a recurring plan must cost something; a manually managed
+  // one is free to be zero. Surfaced inline so the admin doesn't have to read a 400 to learn it.
+  const priceError =
+    Number.isNaN(price) || price < 0
+      ? 'Price cannot be negative'
+      : isRecurring && price <= 0
+        ? 'A recurring plan must have a price above zero'
+        : null;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const maxUsers = Number(form.maxUsers);
     if (!form.key.trim() && !isEdit) return;
     if (!form.name.trim() || !maxUsers || maxUsers <= 0) return;
+    if (priceError || form.currency.trim().length !== 3) return;
 
     onSubmit({
       key: form.key.trim().toLowerCase(),
       name: form.name.trim(),
       description: form.description.trim(),
       maxUsers,
+      price,
+      currency: form.currency.trim().toUpperCase(),
+      billingInterval: form.billingInterval,
+      externalPriceId: form.externalPriceId.trim() || null,
+      requestsPerMinute: Math.max(0, Math.floor(Number(form.requestsPerMinute) || 0)),
       moduleKeys: Array.from(moduleKeys),
     });
   };
@@ -114,10 +163,10 @@ const PlanForm: React.FC<{
     <form onSubmit={handleSubmit} className="space-y-4">
       {!isEdit && (
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="key" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Key<span className="text-red-500 ml-1">*</span>
           </label>
-          <input
+          <input id="key"
             type="text"
             required
             value={form.key}
@@ -128,10 +177,10 @@ const PlanForm: React.FC<{
         </div>
       )}
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Name<span className="text-red-500 ml-1">*</span>
         </label>
-        <input
+        <input id="name"
           type="text"
           required
           value={form.name}
@@ -141,8 +190,8 @@ const PlanForm: React.FC<{
         />
       </div>
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-        <textarea
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+        <textarea id="description"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           rows={2}
@@ -150,10 +199,10 @@ const PlanForm: React.FC<{
         />
       </div>
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="max-users" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Max Users<span className="text-red-500 ml-1">*</span>
         </label>
-        <input
+        <input id="max-users"
           type="number"
           min={1}
           required
@@ -162,15 +211,79 @@ const PlanForm: React.FC<{
           className={inputClasses}
         />
       </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="space-y-1">
+          <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Price</label>
+          <input id="price"
+            type="number"
+            min={0}
+            step="0.01"
+            value={form.price}
+            onChange={(e) => setForm({ ...form, price: e.target.value })}
+            className={inputClasses}
+          />
+          {priceError && <p className="text-xs text-red-500">{priceError}</p>}
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Currency</label>
+          <input id="currency"
+            type="text"
+            maxLength={3}
+            value={form.currency}
+            onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })}
+            placeholder="USD"
+            className={`${inputClasses} uppercase`}
+          />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="billing-interval" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Billing interval</label>
+          <select id="billing-interval"
+            value={form.billingInterval}
+            onChange={(e) => setForm({ ...form, billingInterval: Number(e.target.value) as BillingInterval })}
+            className={inputClasses}
+          >
+            {INTERVAL_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Included Modules</label>
+        <label htmlFor="provider-price-id" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Provider price ID</label>
+        <input id="provider-price-id"
+          type="text"
+          value={form.externalPriceId}
+          onChange={(e) => setForm({ ...form, externalPriceId: e.target.value })}
+          placeholder="e.g. price_1Nxxxx"
+          className={inputClasses}
+        />
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          The price/plan id in your payment provider. Required for tenants to buy this plan through self-service checkout.
+        </p>
+      </div>
+      <div className="space-y-1">
+        <label htmlFor="api-requests-minute" className="block text-sm font-medium text-gray-700 dark:text-gray-300">API requests / minute</label>
+        <input id="api-requests-minute"
+          type="number"
+          min={0}
+          step={1}
+          value={form.requestsPerMinute}
+          onChange={(e) => setForm({ ...form, requestsPerMinute: e.target.value })}
+          className={inputClasses}
+        />
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Per tenant, across all of its users. 0 uses the platform default. Applies at the next token refresh.
+        </p>
+      </div>
+      <div className="space-y-1">
+        <label htmlFor="included-modules" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Included Modules</label>
         {modules.length === 0 ? (
           <p className="text-sm text-gray-400">No optional modules are available yet</p>
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-lg">
             {modules.map((module) => (
               <label key={module.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer">
-                <input
+                <input id="included-modules"
                   type="checkbox"
                   checked={moduleKeys.has(module.key)}
                   onChange={() => toggleModule(module.key)}
@@ -255,6 +368,23 @@ export const SubscriptionPlansPage: React.FC = () => {
     { key: 'name', label: 'Name', sortable: true },
     { key: 'maxUsers', label: 'Max Users', sortable: true },
     {
+      key: 'price',
+      label: 'Price',
+      sortable: true,
+      render: (_, plan) =>
+        plan.billingInterval === BillingInterval.None && plan.price === 0 ? (
+          <span className="text-gray-400">Not sold</span>
+        ) : (
+          <span>
+            {formatCurrency(plan.price, plan.currency)}
+            <span className="text-gray-400">{INTERVAL_SUFFIX[plan.billingInterval]}</span>
+            {!plan.externalPriceId && plan.billingInterval !== BillingInterval.None && (
+              <span className="ml-1 text-xs text-amber-600 dark:text-amber-400" title="No provider price id: cannot be bought via checkout">!</span>
+            )}
+          </span>
+        ),
+    },
+    {
       key: 'moduleKeys',
       label: 'Modules',
       render: (_, plan) => (plan.moduleKeys.length > 0 ? plan.moduleKeys.join(', ') : '—'),
@@ -324,6 +454,11 @@ export const SubscriptionPlansPage: React.FC = () => {
               name: editPlan.name,
               description: editPlan.description,
               maxUsers: String(editPlan.maxUsers),
+              price: String(editPlan.price ?? 0),
+              currency: editPlan.currency || 'USD',
+              billingInterval: editPlan.billingInterval ?? BillingInterval.None,
+              externalPriceId: editPlan.externalPriceId ?? '',
+              requestsPerMinute: String(editPlan.requestsPerMinute ?? 0),
             }}
             isEdit
             modules={modules}
@@ -337,6 +472,11 @@ export const SubscriptionPlansPage: React.FC = () => {
                   name: values.name,
                   description: values.description,
                   maxUsers: values.maxUsers,
+                  price: values.price,
+                  currency: values.currency,
+                  billingInterval: values.billingInterval,
+                  externalPriceId: values.externalPriceId,
+                  requestsPerMinute: values.requestsPerMinute,
                   moduleKeys: values.moduleKeys,
                 },
               })

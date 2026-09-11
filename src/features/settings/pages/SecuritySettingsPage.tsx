@@ -45,12 +45,12 @@ export const SecuritySettingsPage: React.FC = () => {
           <Toggle checked={form.twoFactorAuth} onChange={() => setForm({ ...form, twoFactorAuth: !form.twoFactorAuth })} label="Two-Factor Authentication" desc="Require 2FA for all user accounts" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-3">
             <div>
-              <label className={labelCls}>Session Timeout (minutes)</label>
-              <input type="number" value={form.sessionTimeout} onChange={(e) => setForm({ ...form, sessionTimeout: e.target.value })} className={inputCls} />
+              <label htmlFor="session-timeout-minutes" className={labelCls}>Session Timeout (minutes)</label>
+              <input id="session-timeout-minutes" type="number" value={form.sessionTimeout} onChange={(e) => setForm({ ...form, sessionTimeout: e.target.value })} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Max Login Attempts</label>
-              <input type="number" value={form.maxLoginAttempts} onChange={(e) => setForm({ ...form, maxLoginAttempts: e.target.value })} className={inputCls} />
+              <label htmlFor="max-login-attempts" className={labelCls}>Max Login Attempts</label>
+              <input id="max-login-attempts" type="number" value={form.maxLoginAttempts} onChange={(e) => setForm({ ...form, maxLoginAttempts: e.target.value })} className={inputCls} />
             </div>
           </div>
         </div>
@@ -59,8 +59,8 @@ export const SecuritySettingsPage: React.FC = () => {
           <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">Password Policy</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-3">
             <div>
-              <label className={labelCls}>Minimum Password Length</label>
-              <input type="number" value={form.passwordMinLength} onChange={(e) => setForm({ ...form, passwordMinLength: e.target.value })} className={inputCls} />
+              <label htmlFor="minimum-password-length" className={labelCls}>Minimum Password Length</label>
+              <input id="minimum-password-length" type="number" value={form.passwordMinLength} onChange={(e) => setForm({ ...form, passwordMinLength: e.target.value })} className={inputCls} />
             </div>
           </div>
           <Toggle checked={form.requireSpecialChars} onChange={() => setForm({ ...form, requireSpecialChars: !form.requireSpecialChars })} label="Require Special Characters" desc="Passwords must contain at least one special character" />
@@ -70,12 +70,12 @@ export const SecuritySettingsPage: React.FC = () => {
         <div className="p-6 space-y-5">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">Advanced</h2>
           <div>
-            <label className={labelCls}>IP Whitelist (comma-separated)</label>
-            <textarea rows={2} value={form.ipWhitelist} onChange={(e) => setForm({ ...form, ipWhitelist: e.target.value })} className={`${inputCls} resize-none`} placeholder="e.g. 192.168.1.1, 10.0.0.0/24" />
+            <label htmlFor="ip-whitelist-comma-separated" className={labelCls}>IP Whitelist (comma-separated)</label>
+            <textarea id="ip-whitelist-comma-separated" rows={2} value={form.ipWhitelist} onChange={(e) => setForm({ ...form, ipWhitelist: e.target.value })} className={`${inputCls} resize-none`} placeholder="e.g. 192.168.1.1, 10.0.0.0/24" />
           </div>
           <div>
-            <label className={labelCls}>Audit Log Retention (days)</label>
-            <input type="number" value={form.auditLogRetention} onChange={(e) => setForm({ ...form, auditLogRetention: e.target.value })} className={inputCls} />
+            <label htmlFor="audit-log-retention-days" className={labelCls}>Audit Log Retention (days)</label>
+            <input id="audit-log-retention-days" type="number" value={form.auditLogRetention} onChange={(e) => setForm({ ...form, auditLogRetention: e.target.value })} className={inputCls} />
           </div>
         </div>
       </div>

@@ -234,8 +234,9 @@ export function DataTable<T extends object>({
                                     variantStyles[action.variant || 'secondary']
                                   }`}
                                   title={action.label}
+                                  aria-label={action.label}
                                 >
-                                  <Icon className="w-4 h-4" />
+                                  <Icon className="w-4 h-4" aria-hidden />
                                 </button>
                               );
                             })}

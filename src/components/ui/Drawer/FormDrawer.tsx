@@ -66,6 +66,7 @@ export const FormDrawer: React.FC<FormDrawerProps> = ({
     <>
       {isOpen && (
         <div
+          role="presentation"
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] transition-opacity"
           onClick={onClose}
         />

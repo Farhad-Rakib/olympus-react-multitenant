@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { LicenseStatusBanner } from './components/LicenseStatusBanner';
+import { ActingTenantBanner } from './components/TenantSwitcher';
+import { ImpersonationBanner } from './components/ImpersonationBanner';
 import { CommandPalette } from '../../components/CommandPalette/CommandPalette';
 import { ErrorBoundary } from '../../components/ErrorBoundary/ErrorBoundary';
 import { Loader } from '../../components/ui/Loader/Loader';
@@ -36,6 +38,8 @@ export const DashboardLayout: React.FC = () => {
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header onMenuClick={() => setIsSidebarOpen(true)} />
+          <ImpersonationBanner />
+          <ActingTenantBanner />
           <LicenseStatusBanner />
 
           <main className="flex-1 overflow-y-auto">

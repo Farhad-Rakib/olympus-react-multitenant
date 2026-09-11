@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Mail, Eye } from 'lucide-react';
+import { Pencil, Mail, Eye, UserCog } from 'lucide-react';
+import { useAuthStore } from '../../auth/store/auth.store';
 import { DataTable, Column, RowAction } from '../../../components/table/DataTable';
 import { Modal } from '../../../components/ui/Modal/Modal';
 import { DynamicForm, FormField } from '../../../components/form/DynamicForm';
@@ -35,6 +36,11 @@ class UsersApi extends BaseRepository {
     if (!res.success) throw new Error(res.message);
     return res.data;
   }
+  async impersonate(userId: number): Promise<{ accessToken: string; accessTokenExpiresAtUtc: string; userId: number; fullName: string; email: string }> {
+    const res = await this.post<ApiResponse<{ accessToken: string; accessTokenExpiresAtUtc: string; userId: number; fullName: string; email: string }>>(`/${userId}/impersonate`, {});
+    if (!res.success) throw new Error(res.message);
+    return res.data;
+  }
   async updateRoles(userId: number, roleIds: number[]): Promise<UserDto> {
     const res = await this.put<ApiResponse<UserDto>>(`/${userId}/roles`, { roleIds });
     if (!res.success) throw new Error(res.message);
@@ -66,6 +72,22 @@ const rolesListApi = new RolesListApi();
 
 export const UsersPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const canImpersonate = useAuthStore((s) => s.hasPermission('users.impersonate') || s.isPlatformAdmin());
+  const impersonation = useAuthStore((s) => s.impersonation);
+  const currentUserId = useAuthStore((s) => s.tokenPayload?.sub);
+  const startImpersonation = useAuthStore((s) => s.startImpersonation);
+
+  const impersonateMutation = useMutation({
+    mutationFn: (userId: number) => usersApi.impersonate(userId),
+    onSuccess: (result) => {
+      startImpersonation(result);
+      // Full navigation, not router navigate(): the swap re-renders this users.read-guarded page
+      // with the target's permissions before an async router transition lands, bouncing to /403.
+      // A reload also guarantees nothing from the support user's identity lingers in memory.
+      window.location.assign('/dashboard');
+    },
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Could not start impersonation')),
+  });
   const [showAddModal, setShowAddModal] = useState(false);
   const [editUser, setEditUser] = useState<UserDto | null>(null);
   const [viewUser, setViewUser] = useState<UserDto | null>(null);
@@ -151,6 +173,15 @@ export const UsersPage: React.FC = () => {
   const rowActions: RowAction<UserDto>[] = [
     { icon: Eye, label: 'View', onClick: (user) => setViewUser(user), variant: 'secondary' },
     { icon: Pencil, label: 'Edit Roles', onClick: (user) => setEditUser(user), variant: 'primary' },
+    {
+      icon: UserCog,
+      label: 'View as',
+      variant: 'warning',
+      // Hidden unless granted (users.impersonate is not in the Admin role by default), while
+      // already impersonating (the server refuses chaining anyway), and for yourself.
+      show: (user) => canImpersonate && !impersonation && String(user.id) !== currentUserId && user.isActive,
+      onClick: (user) => impersonateMutation.mutate(user.id),
+    },
   ];
 
   const createFields: FormField[] = [

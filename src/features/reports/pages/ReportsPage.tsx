@@ -184,8 +184,8 @@ export const ReportsPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Date From */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Date From</label>
-              <input
+              <label htmlFor="date-from" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Date From</label>
+              <input id="date-from"
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
@@ -195,8 +195,8 @@ export const ReportsPage: React.FC = () => {
 
             {/* Date To */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Date To</label>
-              <input
+              <label htmlFor="date-to" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Date To</label>
+              <input id="date-to"
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
