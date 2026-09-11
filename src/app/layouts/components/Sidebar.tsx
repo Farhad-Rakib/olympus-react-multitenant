@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Languages,
@@ -87,6 +87,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
+
+  // Open the group that contains the current route so the active page is visible on load and
+  // after navigation (e.g. from the command palette); other groups keep the user's own toggles.
+  useEffect(() => {
+    const owners = menuItems
+      .filter((item) => item.children?.some((c) => c.url && location.pathname.startsWith(c.url)))
+      .map((item) => item.title);
+    if (owners.length === 0) return;
+    setExpandedItems((prev) => Array.from(new Set([...prev, ...owners])));
+  }, [menuItems, location.pathname]);
 
   const toggleExpand = (title: string) => {
     setExpandedItems((prev) =>
