@@ -147,7 +147,6 @@ export const TranslationsPage: React.FC = () => {
               placeholder={t('translations.newLanguagePlaceholder')}
               className={inputClasses}
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t('translations.newLanguageHint')}</p>
           </div>
           <button
             type="submit"
@@ -161,12 +160,14 @@ export const TranslationsPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setConfirmDelete(true)}
+            aria-label={t('translations.deleteLanguage')}
             className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
           >
             <Trash2 className="w-4 h-4" /> {t('translations.deleteLanguage')}
           </button>
         )}
       </div>
+      <p className="-mt-3 text-xs text-gray-500 dark:text-gray-400">{t('translations.newLanguageHint')}</p>
 
       {!language ? (
         <EmptyState title={t('translations.noLanguages')} />
