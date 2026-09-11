@@ -33,7 +33,20 @@
     "signOut": "Sign out",
     "email": "Email",
     "password": "Password",
-    "forgotPassword": "Forgot password?"
+    "forgotPassword": "Forgot Password",
+    "welcomeBack": "Welcome back",
+    "signInSubtitle": "Sign in to your account to continue",
+    "organization": "Organization",
+    "organizationPlaceholder": "your-organization",
+    "emailAddress": "Email address",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "Enter your password",
+    "signingIn": "Signing in...",
+    "forgotPasswordLink": "Forgot password?",
+    "forgotSubtitle": "Enter your email address and we'll send you a reset link",
+    "sending": "Sending...",
+    "sendResetLink": "Send Reset Link",
+    "backToSignIn": "Back to Sign In"
   },
   "dashboard": {
     "title": "Your workspace at a glance",
@@ -142,5 +155,40 @@
     "banner": "You are viewing as {{name}} ({{email}}). Actions are audited to your account.",
     "expires": "Session ends {{time}}",
     "exit": "Stop impersonating"
+  },
+  "header": {
+    "lightMode": "Switch to light mode",
+    "darkMode": "Switch to dark mode",
+    "notifications": "Notifications",
+    "markAllRead": "Mark all read",
+    "noNotifications": "No notifications",
+    "profile": "Profile",
+    "logout": "Logout",
+    "clearCache": "Clear cache",
+    "clearCacheTitle": "Clear server and client cache",
+    "cacheCleared": "Cache cleared",
+    "cacheClearFailed": "Cache clear failed"
+  },
+  "menu": {
+    "dashboard": "Dashboard",
+    "iam": "IAM",
+    "users": "Users",
+    "roles": "Roles",
+    "permissions": "Permissions",
+    "user_roles": "User Roles",
+    "role_permissions": "Role Permissions",
+    "configuration": "Configuration",
+    "menus": "Menus",
+    "site_settings": "Site Settings",
+    "feature_flags": "Feature Flags",
+    "translations": "Translations",
+    "billing": "Billing",
+    "monitoring": "Monitoring",
+    "reports": "Reports",
+    "audit_logs": "Audit Logs",
+    "platform": "Platform",
+    "tenants": "Tenants",
+    "subscription_plans": "Subscription Plans",
+    "system_settings": "System Settings"
   }
 }

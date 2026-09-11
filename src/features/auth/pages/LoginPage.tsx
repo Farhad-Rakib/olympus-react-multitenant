@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -11,6 +12,7 @@ import { AuthService } from '../../../core/services/impl/auth.service';
 const authService = new AuthService();
 
 export const LoginPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isLoading } = useAuthStore();
@@ -63,16 +65,16 @@ export const LoginPage: React.FC = () => {
     return (
       <div>
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Forgot Password</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('auth.forgotPassword')}</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Enter your email address and we'll send you a reset link
+            {t('auth.forgotSubtitle')}
           </p>
         </div>
 
         <form onSubmit={handleForgotPassword} className="space-y-4">
           <div>
             <label htmlFor="forgot-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Email address
+              {t('auth.emailAddress')}
             </label>
             <input
               id="forgot-email"
@@ -82,7 +84,7 @@ export const LoginPage: React.FC = () => {
               required
               disabled={forgotLoading}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-              placeholder="you@example.com"
+              placeholder={t('auth.emailPlaceholder')}
             />
           </div>
 
@@ -94,12 +96,12 @@ export const LoginPage: React.FC = () => {
             {forgotLoading ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Sending...
+                {t('auth.sending')}
               </>
             ) : (
               <>
                 <Mail className="w-4 h-4" />
-                Send Reset Link
+                {t('auth.sendResetLink')}
               </>
             )}
           </button>
@@ -110,7 +112,7 @@ export const LoginPage: React.FC = () => {
           className="mt-4 w-full flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Sign In
+          {t('auth.backToSignIn')}
         </button>
       </div>
     );
@@ -119,9 +121,9 @@ export const LoginPage: React.FC = () => {
   return (
     <div>
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome back</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('auth.welcomeBack')}</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Sign in to your account to continue
+          {t('auth.signInSubtitle')}
         </p>
       </div>
 
@@ -129,7 +131,7 @@ export const LoginPage: React.FC = () => {
         {requiresTenantSlug && (
           <div>
             <label htmlFor="tenantSlug" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Organization
+              {t('auth.organization')}
             </label>
             <input
               id="tenantSlug"
@@ -139,14 +141,14 @@ export const LoginPage: React.FC = () => {
               required
               disabled={isLoading}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-              placeholder="your-organization"
+              placeholder={t('auth.organizationPlaceholder')}
             />
           </div>
         )}
 
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Email address
+            {t('auth.emailAddress')}
           </label>
           <input
             id="email"
@@ -156,21 +158,21 @@ export const LoginPage: React.FC = () => {
             required
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            placeholder="you@example.com"
+            placeholder={t('auth.emailPlaceholder')}
           />
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-1">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Password
+              {t('auth.password')}
             </label>
             <button
               type="button"
               onClick={() => setShowForgotPassword(true)}
               className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
             >
-              Forgot password?
+              {t('auth.forgotPasswordLink')}
             </button>
           </div>
           <input
@@ -181,7 +183,7 @@ export const LoginPage: React.FC = () => {
             required
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            placeholder="Enter your password"
+            placeholder={t('auth.passwordPlaceholder')}
           />
         </div>
 
@@ -193,12 +195,12 @@ export const LoginPage: React.FC = () => {
           {isLoading ? (
             <>
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Signing in...
+              {t('auth.signingIn')}
             </>
           ) : (
             <>
               <LogIn className="w-4 h-4" />
-              Sign in
+              {t('auth.signIn')}
             </>
           )}
         </button>

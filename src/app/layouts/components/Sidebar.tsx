@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { menuApi } from '../../../core/api/services/menu.api';
 import { MenuItem } from '../../../domain/models/menu.model';
 import { useAuthStore } from '../../../features/auth/store/auth.store';
@@ -24,6 +25,13 @@ import { AppConfig } from '../../../core/config/app.config';
 // entirely -- all ~1400 icons were bundled, which was the single largest thing in the main chunk.
 // Listing them explicitly means only these are shipped. An unlisted name falls back to a neutral
 // icon rather than rendering nothing, so a new menu entry is still visible before its icon is added.
+// Menu titles are stored server-side in English. Each is looked up as menu.<slug> (e.g.
+// "Role Permissions" -> menu.role_permissions; segments must match the server's key rule
+// [A-Za-z0-9_]). A language without that key falls back to the stored title, so a new menu item
+// is never blank.
+export const menuTitleKey = (title: string) =>
+  `menu.${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '')}`;
+
 const iconMap: Record<string, LucideIcon> = {
   dashboard: LayoutDashboard,
   users: Users,
@@ -63,6 +71,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const { tokenPayload } = useAuthStore();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -110,7 +119,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           >
             <div className="flex items-center gap-3">
               {getIcon(item.icon)}
-              <span>{item.title}</span>
+              <span>{t(menuTitleKey(item.title), { defaultValue: item.title })}</span>
             </div>
             {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
@@ -138,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         style={{ paddingLeft: `${1 + depth * 0.75}rem` }}
       >
         {getIcon(item.icon)}
-        <span>{item.title}</span>
+        <span>{t(menuTitleKey(item.title), { defaultValue: item.title })}</span>
       </Link>
     );
   };
