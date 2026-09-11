@@ -13,7 +13,11 @@ import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
 import { subscriptionPlanApi } from '../../subscription-plans/pages/SubscriptionPlansPage';
 import { getApiErrorMessage } from '../../../core/utils/error';
+import { formatDate } from '../../../core/i18n/format';
 import { formatDateTime } from '../../../core/i18n/format';
+
+// Mirrors backend LicenseStatus enum order.
+export type LicenseStatusCode = 0 | 1 | 2 | 3 | 4; // Active, Trial, GracePeriod, Expired, Suspended
 
 export interface TenantDto {
   id: number;
@@ -22,6 +26,11 @@ export interface TenantDto {
   isActive: boolean;
   subscriptionPlanId: number | null;
   isProvisioned: boolean;
+  licenseStatus: LicenseStatusCode;
+  trialEndsAtUtc: string | null;
+  licenseExpiresAtUtc: string | null;
+  isSuspended: boolean;
+  lastPaymentAtUtc: string | null; // null = never paid via a billing provider (manual licence or unpaid)
 }
 
 interface PendingRegistrationDto {
@@ -424,6 +433,21 @@ export const TenantsPage: React.FC = () => {
     onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to resync all catalogs')),
   });
 
+  const LICENSE_BADGE: Record<LicenseStatusCode, { label: string; cls: string }> = {
+    0: { label: 'Active', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+    1: { label: 'Trial', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    2: { label: 'Grace period', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+    3: { label: 'Expired', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+    4: { label: 'Suspended', cls: 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' },
+  };
+  const getLicenseBadge = (t: TenantDto) => {
+    const b = LICENSE_BADGE[t.licenseStatus] ?? LICENSE_BADGE[0];
+    return <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${b.cls}`}>{b.label}</span>;
+  };
+  // Paid-until: for trials show the trial end; perpetual (no expiry) licences show a dash.
+  const paidUntil = (t: TenantDto) =>
+    t.licenseStatus === 1 ? formatDate(t.trialEndsAtUtc) : t.licenseExpiresAtUtc ? formatDate(t.licenseExpiresAtUtc) : '—';
+
   const getStatusBadge = (isActive: boolean) => (
     <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${
       isActive
@@ -445,6 +469,17 @@ export const TenantsPage: React.FC = () => {
         tenant.subscriptionPlanId !== null ? (planNameById.get(tenant.subscriptionPlanId) ?? '—') : '—',
     },
     { key: 'isActive', label: 'Status', sortable: true, render: (_, tenant) => getStatusBadge(tenant.isActive) },
+    { key: 'licenseStatus', label: 'License', sortable: true, render: (_, tenant) => getLicenseBadge(tenant) },
+    { key: 'licenseExpiresAtUtc', label: 'Paid until', sortable: true, render: (_, tenant) => paidUntil(tenant) },
+    {
+      key: 'lastPaymentAtUtc',
+      label: 'Last payment',
+      sortable: true,
+      render: (_, tenant) =>
+        tenant.lastPaymentAtUtc ? formatDate(tenant.lastPaymentAtUtc) : (
+          <span className="text-gray-400" title="No payment recorded via a billing provider">Never</span>
+        ),
+    },
   ];
 
   const rowActions: RowAction<TenantDto>[] = [
