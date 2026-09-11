@@ -41,7 +41,7 @@ export const LoginPage: React.FC = () => {
       toast.success('Login successful!');
       navigate(from, { replace: true });
     } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error, 'Login failed. Please try again.'));
+      toast.error(getApiErrorMessage(error, t('auth.loginFailed')));
     }
   };
 
@@ -51,11 +51,11 @@ export const LoginPage: React.FC = () => {
     setForgotLoading(true);
     try {
       const msg = await authService.forgotPassword({ email: forgotEmail });
-      toast.success(msg || 'Password reset link sent to your email');
+      toast.success(msg || t('auth.resetLinkSent'));
       setShowForgotPassword(false);
       setForgotEmail('');
     } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error, 'Failed to send reset email'));
+      toast.error(getApiErrorMessage(error, t('auth.resetFailed')));
     } finally {
       setForgotLoading(false);
     }

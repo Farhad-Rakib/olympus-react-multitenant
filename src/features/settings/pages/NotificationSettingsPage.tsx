@@ -1,15 +1,17 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Save, Bell } from 'lucide-react';
 import { useSettingsStore } from '../store/settings.store';
 import { toast } from '../../../components/ui/Toast/toast.store';
 
 export const NotificationSettingsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { notifications, updateNotifications } = useSettingsStore();
   const [form, setForm] = useState(notifications);
 
   const handleSave = () => {
     updateNotifications(form);
-    toast.success('Notification settings saved');
+    toast.success(t('settings.notificationSettingsSaved'));
   };
 
   const Toggle: React.FC<{ checked: boolean; onChange: () => void; label: string; desc: string }> = ({ checked, onChange, label, desc }) => (
@@ -33,32 +35,32 @@ export const NotificationSettingsPage: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Bell className="w-6 h-6 text-blue-600" /> Notification Settings
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Control how and when you receive notifications</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{t('settings.controlHowAndWhenYouReceiveNotifications')}</p>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
         <div className="p-6">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Channels</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1">{t('settings.channels')}</h2>
           <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-            <Toggle checked={form.emailNotifications} onChange={() => setForm({ ...form, emailNotifications: !form.emailNotifications })} label="Email Notifications" desc="Receive notifications via email" />
-            <Toggle checked={form.pushNotifications} onChange={() => setForm({ ...form, pushNotifications: !form.pushNotifications })} label="Push Notifications" desc="Receive browser push notifications" />
+            <Toggle checked={form.emailNotifications} onChange={() => setForm({ ...form, emailNotifications: !form.emailNotifications })} label={t('settings.emailNotifications')} desc="Receive notifications via email" />
+            <Toggle checked={form.pushNotifications} onChange={() => setForm({ ...form, pushNotifications: !form.pushNotifications })} label={t('settings.pushNotifications')} desc="Receive browser push notifications" />
           </div>
         </div>
 
         <div className="p-6">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Alerts</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1">{t('settings.alerts')}</h2>
           <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-            <Toggle checked={form.newUserAlert} onChange={() => setForm({ ...form, newUserAlert: !form.newUserAlert })} label="New User Registrations" desc="Get notified when new users sign up" />
-            <Toggle checked={form.securityAlert} onChange={() => setForm({ ...form, securityAlert: !form.securityAlert })} label="Security Alerts" desc="Failed logins, suspicious activity, etc." />
-            <Toggle checked={form.systemUpdateAlert} onChange={() => setForm({ ...form, systemUpdateAlert: !form.systemUpdateAlert })} label="System Updates" desc="System maintenance and update notifications" />
+            <Toggle checked={form.newUserAlert} onChange={() => setForm({ ...form, newUserAlert: !form.newUserAlert })} label={t('settings.newUserRegistrations')} desc="Get notified when new users sign up" />
+            <Toggle checked={form.securityAlert} onChange={() => setForm({ ...form, securityAlert: !form.securityAlert })} label={t('settings.securityAlerts')} desc="Failed logins, suspicious activity, etc." />
+            <Toggle checked={form.systemUpdateAlert} onChange={() => setForm({ ...form, systemUpdateAlert: !form.systemUpdateAlert })} label={t('settings.systemUpdates')} desc="System maintenance and update notifications" />
           </div>
         </div>
 
         <div className="p-6">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Reports</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1">{t('settings.reports')}</h2>
           <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-            <Toggle checked={form.weeklyReport} onChange={() => setForm({ ...form, weeklyReport: !form.weeklyReport })} label="Weekly Summary" desc="Receive a weekly activity summary via email" />
-            <Toggle checked={form.monthlyReport} onChange={() => setForm({ ...form, monthlyReport: !form.monthlyReport })} label="Monthly Report" desc="Detailed monthly analytics and metrics report" />
+            <Toggle checked={form.weeklyReport} onChange={() => setForm({ ...form, weeklyReport: !form.weeklyReport })} label={t('settings.weeklySummary')} desc="Receive a weekly activity summary via email" />
+            <Toggle checked={form.monthlyReport} onChange={() => setForm({ ...form, monthlyReport: !form.monthlyReport })} label={t('settings.monthlyReport')} desc="Detailed monthly analytics and metrics report" />
           </div>
         </div>
       </div>

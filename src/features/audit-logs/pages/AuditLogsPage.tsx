@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, Plus, Pencil, Trash2, LogIn } from 'lucide-react';
 import { DataTable, Column, RowAction } from '../../../components/table/DataTable';
@@ -85,6 +86,7 @@ const selectClasses =
   'px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm';
 
 export const AuditLogsPage: React.FC = () => {
+  const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [entityName, setEntityName] = useState('');
@@ -129,13 +131,13 @@ export const AuditLogsPage: React.FC = () => {
   const columns: Column<AuditLogDto>[] = [
     {
       key: 'createdAt',
-      label: 'Time',
+      label: t('auditLogs.time'),
       width: '180px',
       render: (_, log) => formatDateTime(log.createdAt),
     },
     {
       key: 'action',
-      label: 'Action',
+      label: t('auditLogs.action'),
       width: '110px',
       render: (_, log) => {
         const label = ACTION_LABELS[log.action];
@@ -149,7 +151,7 @@ export const AuditLogsPage: React.FC = () => {
     },
     {
       key: 'entityName',
-      label: 'Entity',
+      label: t('auditLogs.entity'),
       render: (_, log) => (
         <span className="text-sm text-gray-900 dark:text-white">
           {log.entityName}
@@ -160,19 +162,19 @@ export const AuditLogsPage: React.FC = () => {
     ...(isPlatformSuperAdmin
       ? [{
           key: 'tenantName',
-          label: 'Tenant',
-          render: (_: unknown, log: AuditLogDto) => log.tenantName || <span className="text-gray-400">Global</span>,
+          label: t('auditLogs.tenant'),
+          render: (_: unknown, log: AuditLogDto) => log.tenantName || <span className="text-gray-400">{t('auditLogs.global')}</span>,
         } as Column<AuditLogDto>]
       : []),
     {
       key: 'userName',
-      label: 'User',
-      render: (_, log) => log.userName || <span className="text-gray-400">System</span>,
+      label: t('common.user'),
+      render: (_, log) => log.userName || <span className="text-gray-400">{t('auditLogs.system')}</span>,
     },
   ];
 
   const rowActions: RowAction<AuditLogDto>[] = [
-    { icon: Eye, label: 'View changes', onClick: (log) => setViewLog(log), variant: 'secondary' },
+    { icon: Eye, label: t('auditLogs.viewChanges'), onClick: (log) => setViewLog(log), variant: 'secondary' },
   ];
 
   let changesEntries: [string, unknown][] = [];
@@ -187,9 +189,9 @@ export const AuditLogsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Audit Logs</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('auditLogs.auditLogs')}</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Track every create, update, and delete recorded across the platform
+          {t('auditLogs.trackEveryCreateUpdateAndDeleteRecordedA')}
         </p>
       </div>
 
@@ -199,7 +201,7 @@ export const AuditLogsPage: React.FC = () => {
           onChange={(e) => resetToFirstPage(setEntityName)(e.target.value)}
           className={selectClasses}
         >
-          <option value="">All entities</option>
+          <option value="">{t('auditLogs.allEntities')}</option>
           {ENTITY_NAMES.map((name) => (
             <option key={name} value={name}>{name}</option>
           ))}
@@ -210,7 +212,7 @@ export const AuditLogsPage: React.FC = () => {
           onChange={(e) => resetToFirstPage(setAction)(e.target.value)}
           className={selectClasses}
         >
-          <option value="">All actions</option>
+          <option value="">{t('auditLogs.allActions')}</option>
           {ACTION_LABELS.map((label, index) => (
             <option key={label} value={index}>{label}</option>
           ))}
@@ -222,7 +224,7 @@ export const AuditLogsPage: React.FC = () => {
             onChange={(e) => resetToFirstPage(setTenantId)(e.target.value)}
             className={selectClasses}
           >
-            <option value="">All tenants</option>
+            <option value="">{t('auditLogs.allTenants')}</option>
             {tenants.map((tenant) => (
               <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
             ))}
@@ -261,41 +263,41 @@ export const AuditLogsPage: React.FC = () => {
             setPage(1);
           },
         }}
-        emptyState={{ title: 'No audit logs found', description: 'Try adjusting your filters' }}
+        emptyState={{ title: t('auditLogs.noAuditLogsFound'), description: t('auditLogs.tryAdjustingYourFilters') }}
         rowActions={rowActions}
         onRetry={() => refetch()}
       />
 
-      <Modal isOpen={viewLog !== null} onClose={() => setViewLog(null)} title="Audit Log Details" size="lg">
+      <Modal isOpen={viewLog !== null} onClose={() => setViewLog(null)} title={t('auditLogs.auditLogDetails')} size="lg">
         {viewLog && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Entity</span>
+                <span className="text-gray-500 dark:text-gray-400">{t('auditLogs.entity')}</span>
                 <p className="text-gray-900 dark:text-white">{viewLog.entityName} {viewLog.entityId !== null && `#${viewLog.entityId}`}</p>
               </div>
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Action</span>
+                <span className="text-gray-500 dark:text-gray-400">{t('auditLogs.action')}</span>
                 <p className="text-gray-900 dark:text-white">{ACTION_LABELS[viewLog.action]}</p>
               </div>
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Tenant</span>
+                <span className="text-gray-500 dark:text-gray-400">{t('auditLogs.tenant')}</span>
                 <p className="text-gray-900 dark:text-white">{viewLog.tenantName || 'Global'}</p>
               </div>
               <div>
-                <span className="text-gray-500 dark:text-gray-400">User</span>
+                <span className="text-gray-500 dark:text-gray-400">{t('common.user')}</span>
                 <p className="text-gray-900 dark:text-white">{viewLog.userName || 'System'}</p>
               </div>
               <div className="col-span-2">
-                <span className="text-gray-500 dark:text-gray-400">Timestamp</span>
+                <span className="text-gray-500 dark:text-gray-400">{t('auditLogs.timestamp')}</span>
                 <p className="text-gray-900 dark:text-white">{formatDateTime(viewLog.createdAt)}</p>
               </div>
             </div>
 
             <div>
-              <span className="text-sm text-gray-500 dark:text-gray-400">Changes</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{t('auditLogs.changes')}</span>
               {changesEntries.length === 0 ? (
-                <p className="text-sm text-gray-400 mt-1">No field-level changes recorded</p>
+                <p className="text-sm text-gray-400 mt-1">{t('auditLogs.noFieldLevelChangesRecorded')}</p>
               ) : (
                 <div className="mt-1 border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-100 dark:divide-gray-700/50">
                   {changesEntries.map(([key, value]) => (

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Mail, Eye, UserCog } from 'lucide-react';
 import { useAuthStore } from '../../auth/store/auth.store';
@@ -71,6 +72,7 @@ const authRegisterApi = new AuthRegisterApi();
 const rolesListApi = new RolesListApi();
 
 export const UsersPage: React.FC = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const canImpersonate = useAuthStore((s) => s.hasPermission('users.impersonate') || s.isPlatformAdmin());
   const impersonation = useAuthStore((s) => s.impersonation);
@@ -86,7 +88,7 @@ export const UsersPage: React.FC = () => {
       // A reload also guarantees nothing from the support user's identity lingers in memory.
       window.location.assign('/dashboard');
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Could not start impersonation')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('users.couldNotStartImpersonation'))),
   });
   const [showAddModal, setShowAddModal] = useState(false);
   const [editUser, setEditUser] = useState<UserDto | null>(null);
@@ -107,10 +109,10 @@ export const UsersPage: React.FC = () => {
       authRegisterApi.register(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('User created successfully');
+      toast.success(t('users.userCreatedSuccessfully'));
       setShowAddModal(false);
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to create user')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('users.failedToCreateUser'))),
   });
 
   const updateRolesMutation = useMutation({
@@ -118,10 +120,10 @@ export const UsersPage: React.FC = () => {
       usersApi.updateRoles(userId, roleIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('User roles updated');
+      toast.success(t('users.userRolesUpdated'));
       setEditUser(null);
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update roles')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('users.failedToUpdateRoles'))),
   });
 
   const getStatusBadge = (isActive: boolean) => (
@@ -130,7 +132,7 @@ export const UsersPage: React.FC = () => {
         ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
         : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
     }`}>
-      {isActive ? 'Active' : 'Inactive'}
+      {isActive ? t('common.active') : t('common.inactive')}
     </span>
   );
 
@@ -141,14 +143,14 @@ export const UsersPage: React.FC = () => {
           {role}
         </span>
       ))}
-      {userRoles.length === 0 && <span className="text-xs text-gray-400">No roles</span>}
+      {userRoles.length === 0 && <span className="text-xs text-gray-400">{t('users.noRoles')}</span>}
     </div>
   );
 
   const columns: Column<UserDto>[] = [
     {
       key: 'fullName',
-      label: 'Name',
+      label: t('common.name'),
       sortable: true,
       render: (_, user) => (
         <div className="flex items-center gap-3">
@@ -166,16 +168,16 @@ export const UsersPage: React.FC = () => {
         </div>
       ),
     },
-    { key: 'roles', label: 'Roles', sortable: false, render: (_, user) => getRoleBadges(user.roles || []) },
-    { key: 'isActive', label: 'Status', sortable: true, render: (_, user) => getStatusBadge(user.isActive) },
+    { key: 'roles', label: t('common.roles'), sortable: false, render: (_, user) => getRoleBadges(user.roles || []) },
+    { key: 'isActive', label: t('common.status'), sortable: true, render: (_, user) => getStatusBadge(user.isActive) },
   ];
 
   const rowActions: RowAction<UserDto>[] = [
-    { icon: Eye, label: 'View', onClick: (user) => setViewUser(user), variant: 'secondary' },
-    { icon: Pencil, label: 'Edit Roles', onClick: (user) => setEditUser(user), variant: 'primary' },
+    { icon: Eye, label: t('users.view'), onClick: (user) => setViewUser(user), variant: 'secondary' },
+    { icon: Pencil, label: t('users.editRoles'), onClick: (user) => setEditUser(user), variant: 'primary' },
     {
       icon: UserCog,
-      label: 'View as',
+      label: t('users.viewAs'),
       variant: 'warning',
       // Hidden unless granted (users.impersonate is not in the Admin role by default), while
       // already impersonating (the server refuses chaining anyway), and for yourself.
@@ -185,12 +187,12 @@ export const UsersPage: React.FC = () => {
   ];
 
   const createFields: FormField[] = [
-    { name: 'fullName', label: 'Full Name', type: 'text', required: true, placeholder: 'John Doe' },
-    { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'john@example.com' },
-    { name: 'password', label: 'Password', type: 'password', required: true, placeholder: 'Enter password' },
+    { name: 'fullName', label: t('users.fullName'), type: 'text', required: true, placeholder: t('users.johnDoe') },
+    { name: 'email', label: t('common.email'), type: 'email', required: true, placeholder: 'john@example.com' },
+    { name: 'password', label: t('common.password'), type: 'password', required: true, placeholder: t('users.enterPassword') },
     {
       name: 'role',
-      label: 'Role',
+      label: t('common.role'),
       type: 'select',
       required: true,
       options: roles.map(r => ({ label: r.name, value: r.name })),
@@ -200,7 +202,7 @@ export const UsersPage: React.FC = () => {
   const editRoleFields: FormField[] = roles.length > 0 ? [
     {
       name: 'roleIds',
-      label: 'Assign Roles',
+      label: t('users.assignRoles'),
       type: 'select',
       required: true,
       options: roles.map(r => ({ label: r.name, value: r.id })),
@@ -226,8 +228,8 @@ export const UsersPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Users</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Manage user accounts and access</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('common.users')}</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('users.manageUserAccountsAndAccess')}</p>
       </div>
 
       <DataTable
@@ -236,24 +238,24 @@ export const UsersPage: React.FC = () => {
         isLoading={isLoading}
         error={error?.message}
         searchable
-        searchPlaceholder="Search users by name or email..."
-        emptyState={{ title: 'No users found', description: 'Create a new user to get started' }}
-        actions={{ add: { label: 'Add User', onClick: () => setShowAddModal(true) } }}
+        searchPlaceholder={t('users.searchUsersByNameOrEmail')}
+        emptyState={{ title: t('users.noUsersFound'), description: t('users.createANewUserToGetStarted') }}
+        actions={{ add: { label: t('users.addUser'), onClick: () => setShowAddModal(true) } }}
         rowActions={rowActions}
         onRetry={() => refetch()}
       />
 
-      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New User" size="md">
+      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title={t('users.addNewUser')} size="md">
         <DynamicForm
           fields={createFields}
           onSubmit={handleCreate}
-          submitLabel="Create User"
+          submitLabel={t('users.createUser')}
           onCancel={() => setShowAddModal(false)}
           isLoading={createMutation.isPending}
         />
       </Modal>
 
-      <Modal isOpen={editUser !== null} onClose={() => setEditUser(null)} title="Edit User Roles" size="md">
+      <Modal isOpen={editUser !== null} onClose={() => setEditUser(null)} title={t('users.editUserRoles')} size="md">
         {editUser && (
           <div className="space-y-4">
             <div className="flex items-center gap-3 pb-4 border-b border-gray-200 dark:border-gray-700">
@@ -271,7 +273,7 @@ export const UsersPage: React.FC = () => {
               key={editUser.id}
               fields={editRoleFields}
               onSubmit={handleUpdateRoles}
-              submitLabel="Update Roles"
+              submitLabel={t('users.updateRoles')}
               onCancel={() => setEditUser(null)}
               isLoading={updateRolesMutation.isPending}
             />
@@ -279,7 +281,7 @@ export const UsersPage: React.FC = () => {
         )}
       </Modal>
 
-      <Modal isOpen={viewUser !== null} onClose={() => setViewUser(null)} title="User Details" size="md">
+      <Modal isOpen={viewUser !== null} onClose={() => setViewUser(null)} title={t('users.userDetails')} size="md">
         {viewUser && (
           <div className="space-y-4">
             <div className="flex items-center gap-4">
@@ -295,11 +297,11 @@ export const UsersPage: React.FC = () => {
             </div>
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('common.status')}</p>
                 <div className="mt-1">{getStatusBadge(viewUser.isActive)}</div>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Roles</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('common.roles')}</p>
                 <div className="mt-1">{getRoleBadges(viewUser.roles || [])}</div>
               </div>
             </div>

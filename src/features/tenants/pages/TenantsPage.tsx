@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Pencil, Ban, Blocks, Rocket, PackageCheck, Link as LinkIcon, Copy, Check,
@@ -62,7 +63,7 @@ interface TenantCatalogResyncResultDto {
   resyncedTenantIds: number[];
 }
 
-const LICENSE_STATUS_LABELS = ['Active', 'Trial', 'Grace Period', 'Expired', 'Suspended'];
+const LICENSE_STATUS_KEYS = ['license.active', 'license.trial', 'license.gracePeriod', 'license.expired', 'license.suspended'];
 const LICENSE_STATUS_STYLES = [
   'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
   'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
@@ -191,6 +192,7 @@ const ToggleSwitch: React.FC<{ checked: boolean; disabled?: boolean; onChange: (
 );
 
 export const TenantsPage: React.FC = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editTenant, setEditTenant] = useState<TenantDto | null>(null);
@@ -253,7 +255,7 @@ export const TenantsPage: React.FC = () => {
       enable ? tenantApi.enableModule(modulesTenant!.id, moduleId) : tenantApi.disableModule(modulesTenant!.id, moduleId),
     onMutate: ({ moduleId }) => setPendingModuleId(moduleId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tenant-modules', modulesTenant?.id] }),
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update module')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToUpdateModule'))),
     onSettled: () => setPendingModuleId(null),
   });
 
@@ -261,30 +263,30 @@ export const TenantsPage: React.FC = () => {
     mutationFn: (dto: { slug: string; name: string }) => tenantApi.create(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
-      toast.success('Tenant created successfully');
+      toast.success(t('tenants.tenantCreatedSuccessfully'));
       setShowAddModal(false);
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to create tenant')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToCreateTenant'))),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, dto }: { id: number; dto: { name: string } }) => tenantApi.update(id, dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
-      toast.success('Tenant updated successfully');
+      toast.success(t('tenants.tenantUpdatedSuccessfully'));
       setEditTenant(null);
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update tenant')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToUpdateTenant'))),
   });
 
   const disableMutation = useMutation({
     mutationFn: (id: number) => tenantApi.disable(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
-      toast.success('Tenant disabled successfully');
+      toast.success(t('tenants.tenantDisabledSuccessfully'));
       setDisableTenantId(null);
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to disable tenant')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToDisableTenant'))),
   });
 
   const provisionMutation = useMutation({
@@ -293,11 +295,11 @@ export const TenantsPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-modules'] });
-      toast.success('Tenant provisioned successfully');
+      toast.success(t('tenants.tenantProvisionedSuccessfully'));
       setProvisionTenant(null);
       setProvisionPlanId('');
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to provision tenant')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToProvisionTenant'))),
   });
 
   const approveRegistrationMutation = useMutation({
@@ -306,11 +308,11 @@ export const TenantsPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-modules'] });
-      toast.success('Registration approved and tenant activated successfully');
+      toast.success(t('tenants.registrationApprovedAndTenantActivatedSu'));
       setProvisionTenant(null);
       setProvisionPlanId('');
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to approve registration')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToApproveRegistration'))),
   });
 
   const assignPlanMutation = useMutation({
@@ -319,11 +321,11 @@ export const TenantsPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-modules'] });
-      toast.success('Subscription plan assigned successfully');
+      toast.success(t('tenants.subscriptionPlanAssignedSuccessfully'));
       setAssignPlanTenant(null);
       setAssignPlanId('');
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to assign subscription plan')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToAssignSubscriptionPlan'))),
   });
 
   const registrationLinkMutation = useMutation({
@@ -333,7 +335,7 @@ export const TenantsPage: React.FC = () => {
       setLinkCopied(false);
     },
     onError: (err: unknown) => {
-      toast.error(getApiErrorMessage(err, 'Failed to generate registration link'));
+      toast.error(getApiErrorMessage(err, t('tenants.failedToGenerateRegistrationLink')));
       setLinkTenant(null);
     },
   });
@@ -342,10 +344,10 @@ export const TenantsPage: React.FC = () => {
     mutationFn: ({ id, trialEndsAtUtc }: { id: number; trialEndsAtUtc: string }) => tenantApi.startTrial(id, trialEndsAtUtc),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-license', licenseTenant?.id] });
-      toast.success('Trial started');
+      toast.success(t('tenants.trialStarted'));
       setTrialDate('');
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to start trial')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToStartTrial'))),
   });
 
   const setExpiryMutation = useMutation({
@@ -353,46 +355,46 @@ export const TenantsPage: React.FC = () => {
       tenantApi.setLicenseExpiry(id, licenseExpiresAtUtc),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-license', licenseTenant?.id] });
-      toast.success('License expiry updated');
+      toast.success(t('tenants.licenseExpiryUpdated'));
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update license expiry')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToUpdateLicenseExpiry'))),
   });
 
   const suspendMutation = useMutation({
     mutationFn: (id: number) => tenantApi.suspendLicense(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-license', licenseTenant?.id] });
-      toast.success('Tenant license suspended');
+      toast.success(t('tenants.tenantLicenseSuspended'));
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to suspend license')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToSuspendLicense'))),
   });
 
   const unsuspendMutation = useMutation({
     mutationFn: (id: number) => tenantApi.unsuspendLicense(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-license', licenseTenant?.id] });
-      toast.success('Tenant license unsuspended');
+      toast.success(t('tenants.tenantLicenseUnsuspended'));
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to unsuspend license')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToUnsuspendLicense'))),
   });
 
   const addDomainMutation = useMutation({
     mutationFn: ({ id, domain }: { id: number; domain: string }) => tenantApi.addDomain(id, domain),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-domains', domainsTenant?.id] });
-      toast.success('Domain added');
+      toast.success(t('tenants.domainAdded'));
       setNewDomain('');
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to add domain')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToAddDomain'))),
   });
 
   const removeDomainMutation = useMutation({
     mutationFn: ({ id, domainId }: { id: number; domainId: number }) => tenantApi.removeDomain(id, domainId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-domains', domainsTenant?.id] });
-      toast.success('Domain removed');
+      toast.success(t('tenants.domainRemoved'));
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to remove domain')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToRemoveDomain'))),
   });
 
   const exportMutation = useMutation({
@@ -405,40 +407,40 @@ export const TenantsPage: React.FC = () => {
       a.download = `${tenant.slug}-export.json`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Tenant data exported');
+      toast.success(t('tenants.tenantDataExported'));
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to export tenant data')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToExportTenantData'))),
   });
 
   const purgeMutation = useMutation({
     mutationFn: ({ id, confirmSlug }: { id: number; confirmSlug: string }) => tenantApi.purge(id, confirmSlug),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
-      toast.success('Tenant purged');
+      toast.success(t('tenants.tenantPurged'));
       setPurgeTenant(null);
       setPurgeConfirmSlug('');
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to purge tenant')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToPurgeTenant'))),
   });
 
   const resyncMutation = useMutation({
     mutationFn: (id: number) => tenantApi.resyncCatalog(id),
-    onSuccess: () => toast.success('Tenant catalog resynced'),
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to resync catalog')),
+    onSuccess: () => toast.success(t('tenants.tenantCatalogResynced')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToResyncCatalog'))),
   });
 
   const resyncAllMutation = useMutation({
     mutationFn: () => tenantApi.resyncAllCatalogs(),
     onSuccess: (result) => toast.success(`Resynced ${result.resyncedCount} tenant(s), skipped ${result.skippedCount} unprovisioned`),
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to resync all catalogs')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('tenants.failedToResyncAllCatalogs'))),
   });
 
   const LICENSE_BADGE: Record<LicenseStatusCode, { label: string; cls: string }> = {
-    0: { label: 'Active', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
-    1: { label: 'Trial', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-    2: { label: 'Grace period', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-    3: { label: 'Expired', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-    4: { label: 'Suspended', cls: 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' },
+    0: { label: t('common.active'), cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+    1: { label: t('tenants.trial'), cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    2: { label: t('tenants.gracePeriod'), cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+    3: { label: t('tenants.expired'), cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+    4: { label: t('tenants.suspended'), cls: 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' },
   };
   const getLicenseBadge = (t: TenantDto) => {
     const b = LICENSE_BADGE[t.licenseStatus] ?? LICENSE_BADGE[0];
@@ -454,78 +456,78 @@ export const TenantsPage: React.FC = () => {
         ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
         : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
     }`}>
-      {isActive ? 'Active' : 'Disabled'}
+      {isActive ? t('common.active') : t('common.disabled')}
     </span>
   );
 
   const columns: Column<TenantDto>[] = [
     { key: 'id', label: 'ID', width: '80px' },
-    { key: 'slug', label: 'Slug', sortable: true },
-    { key: 'name', label: 'Name', sortable: true },
+    { key: 'slug', label: t('tenants.slug'), sortable: true },
+    { key: 'name', label: t('common.name'), sortable: true },
     {
       key: 'subscriptionPlanId',
-      label: 'Plan',
+      label: t('tenants.plan'),
       render: (_, tenant) =>
         tenant.subscriptionPlanId !== null ? (planNameById.get(tenant.subscriptionPlanId) ?? '—') : '—',
     },
-    { key: 'isActive', label: 'Status', sortable: true, render: (_, tenant) => getStatusBadge(tenant.isActive) },
-    { key: 'licenseStatus', label: 'License', sortable: true, render: (_, tenant) => getLicenseBadge(tenant) },
-    { key: 'licenseExpiresAtUtc', label: 'Paid until', sortable: true, render: (_, tenant) => paidUntil(tenant) },
+    { key: 'isActive', label: t('common.status'), sortable: true, render: (_, tenant) => getStatusBadge(tenant.isActive) },
+    { key: 'licenseStatus', label: t('tenants.license'), sortable: true, render: (_, tenant) => getLicenseBadge(tenant) },
+    { key: 'licenseExpiresAtUtc', label: t('tenants.paidUntil'), sortable: true, render: (_, tenant) => paidUntil(tenant) },
     {
       key: 'lastPaymentAtUtc',
-      label: 'Last payment',
+      label: t('tenants.lastPayment'),
       sortable: true,
       render: (_, tenant) =>
         tenant.lastPaymentAtUtc ? formatDate(tenant.lastPaymentAtUtc) : (
-          <span className="text-gray-400" title="No payment recorded via a billing provider">Never</span>
+          <span className="text-gray-400" title={t('tenants.noPaymentRecordedViaABillingProvider')}>{t('common.never')}</span>
         ),
     },
   ];
 
   const rowActions: RowAction<TenantDto>[] = [
-    { icon: Pencil, label: 'Edit', onClick: (t) => setEditTenant(t), variant: 'primary' },
-    { icon: Blocks, label: 'Modules', onClick: (t) => setModulesTenant(t), variant: 'secondary' },
+    { icon: Pencil, label: t('common.edit'), onClick: (t) => setEditTenant(t), variant: 'primary' },
+    { icon: Blocks, label: t('tenants.modules'), onClick: (t) => setModulesTenant(t), variant: 'secondary' },
     {
       icon: Rocket,
-      label: 'Activate',
+      label: t('tenants.activate'),
       onClick: (t) => { setProvisionTenant(t); setProvisionPlanId(t.subscriptionPlanId ? String(t.subscriptionPlanId) : ''); },
       variant: 'secondary',
       show: (t) => !t.isProvisioned,
     },
     {
       icon: LinkIcon,
-      label: 'Registration Link',
+      label: t('tenants.registrationLink'),
       onClick: (t) => { setLinkTenant(t); setRegistrationLink(null); registrationLinkMutation.mutate(t.id); },
       variant: 'secondary',
       show: (t) => !t.isProvisioned,
     },
     {
       icon: PackageCheck,
-      label: 'Assign Plan',
+      label: t('tenants.assignPlan'),
       onClick: (t) => { setAssignPlanTenant(t); setAssignPlanId(t.subscriptionPlanId ? String(t.subscriptionPlanId) : ''); },
       variant: 'secondary',
       show: (t) => t.isProvisioned,
     },
     {
       icon: BadgeCheck,
-      label: 'License',
+      label: t('tenants.license'),
       onClick: (t) => setLicenseTenant(t),
       variant: 'secondary',
       show: (t) => t.isProvisioned,
     },
-    { icon: Globe, label: 'Domains', onClick: (t) => { setDomainsTenant(t); setNewDomain(''); }, variant: 'secondary' },
-    { icon: Download, label: 'Export Data', onClick: (t) => exportMutation.mutate(t), variant: 'secondary' },
+    { icon: Globe, label: t('tenants.domains'), onClick: (t) => { setDomainsTenant(t); setNewDomain(''); }, variant: 'secondary' },
+    { icon: Download, label: t('tenants.exportData'), onClick: (t) => exportMutation.mutate(t), variant: 'secondary' },
     {
       icon: RefreshCw,
-      label: 'Resync Catalog',
+      label: t('tenants.resyncCatalog'),
       onClick: (t) => resyncMutation.mutate(t.id),
       variant: 'secondary',
       show: (t) => t.isProvisioned,
     },
-    { icon: Ban, label: 'Disable', onClick: (t) => setDisableTenantId(t.id), variant: 'danger', show: (t) => t.isActive },
+    { icon: Ban, label: t('tenants.disable'), onClick: (t) => setDisableTenantId(t.id), variant: 'danger', show: (t) => t.isActive },
     {
       icon: Trash2,
-      label: 'Purge',
+      label: t('tenants.purge'),
       onClick: (t) => { setPurgeTenant(t); setPurgeConfirmSlug(''); },
       variant: 'danger',
       show: (t) => !t.isActive,
@@ -533,30 +535,30 @@ export const TenantsPage: React.FC = () => {
   ];
 
   const createFields: FormField[] = [
-    { name: 'slug', label: 'Slug', type: 'text', required: true, placeholder: 'e.g. acme-corp' },
-    { name: 'name', label: 'Name', type: 'text', required: true, placeholder: 'e.g. Acme Corp' },
+    { name: 'slug', label: t('tenants.slug'), type: 'text', required: true, placeholder: 'e.g. acme-corp' },
+    { name: 'name', label: t('common.name'), type: 'text', required: true, placeholder: 'e.g. Acme Corp' },
   ];
 
   const editFields: FormField[] = [
-    { name: 'name', label: 'Name', type: 'text', required: true, defaultValue: editTenant?.name || '' },
+    { name: 'name', label: t('common.name'), type: 'text', required: true, defaultValue: editTenant?.name || '' },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Tenants</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage tenant registrations</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('tenants.tenants')}</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">{t('tenants.manageTenantRegistrations')}</p>
         </div>
         <button
           type="button"
           onClick={() => resyncAllMutation.mutate()}
           disabled={resyncAllMutation.isPending}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
-          title="Re-run RBAC/menu defaults for every provisioned tenant"
+          title={t('tenants.reRunRbacMenuDefaultsForEveryProvisioned')}
         >
           <RotateCw className={`w-4 h-4 ${resyncAllMutation.isPending ? 'animate-spin' : ''}`} />
-          Resync All Catalogs
+          {t('tenants.resyncAllCatalogs')}
         </button>
       </div>
 
@@ -566,30 +568,30 @@ export const TenantsPage: React.FC = () => {
         isLoading={isLoading}
         error={error?.message}
         searchable
-        searchPlaceholder="Search tenants..."
-        emptyState={{ title: 'No tenants found', description: 'Register a new tenant to get started' }}
-        actions={{ add: { label: 'Add Tenant', onClick: () => setShowAddModal(true) } }}
+        searchPlaceholder={t('tenants.searchTenants')}
+        emptyState={{ title: t('tenants.noTenantsFound'), description: t('tenants.registerANewTenantToGetStarted') }}
+        actions={{ add: { label: t('tenants.addTenant'), onClick: () => setShowAddModal(true) } }}
         rowActions={rowActions}
         onRetry={() => refetch()}
       />
 
-      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Register New Tenant" size="md">
+      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title={t('tenants.registerNewTenant')} size="md">
         <DynamicForm
           fields={createFields}
           onSubmit={(data) => createMutation.mutate({ slug: String(data.slug), name: String(data.name) })}
-          submitLabel="Create Tenant"
+          submitLabel={t('tenants.createTenant')}
           onCancel={() => setShowAddModal(false)}
           isLoading={createMutation.isPending}
         />
       </Modal>
 
-      <Modal isOpen={editTenant !== null} onClose={() => setEditTenant(null)} title="Edit Tenant" size="md">
+      <Modal isOpen={editTenant !== null} onClose={() => setEditTenant(null)} title={t('tenants.editTenant')} size="md">
         {editTenant && (
           <DynamicForm
             key={editTenant.id}
             fields={editFields}
             onSubmit={(data) => updateMutation.mutate({ id: editTenant.id, dto: { name: String(data.name) } })}
-            submitLabel="Update Tenant"
+            submitLabel={t('tenants.updateTenant')}
             onCancel={() => setEditTenant(null)}
             isLoading={updateMutation.isPending}
           />
@@ -600,9 +602,9 @@ export const TenantsPage: React.FC = () => {
         isOpen={disableTenantId !== null}
         onClose={() => setDisableTenantId(null)}
         onConfirm={() => disableTenantId !== null && disableMutation.mutate(disableTenantId)}
-        title="Disable Tenant"
-        message="Are you sure you want to disable this tenant? Its users will lose access until it is re-enabled."
-        confirmText="Disable"
+        title={t('tenants.disableTenant')}
+        message={t('tenants.areYouSureYouWantToDisableThisTenantItsU')}
+        confirmText={t('tenants.disable')}
         variant="danger"
       />
 
@@ -613,12 +615,12 @@ export const TenantsPage: React.FC = () => {
         size="md"
       >
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Toggle which modules this tenant has access to. Disabling a module immediately revokes its permissions for this tenant.
+          {t('tenants.toggleWhichModulesThisTenantHasAccessToD')}
         </p>
         {loadingModules ? (
-          <div className="p-8 text-center text-gray-400">Loading...</div>
+          <div className="p-8 text-center text-gray-400">{t('common.loading')}</div>
         ) : modules.length === 0 ? (
-          <div className="p-8 text-center text-gray-400">No optional modules are available yet</div>
+          <div className="p-8 text-center text-gray-400">{t('tenants.noOptionalModulesAreAvailableYet')}</div>
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
             {modules.map((module) => (
@@ -645,12 +647,12 @@ export const TenantsPage: React.FC = () => {
         size="md"
       >
         {loadingPendingRegistration ? (
-          <div className="p-8 text-center text-gray-400">Checking for a pending request...</div>
+          <div className="p-8 text-center text-gray-400">{t('tenants.checkingForAPendingRequest')}</div>
         ) : (
           <>
             {pendingRegistration ? (
               <div className="mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-300">Pending request awaiting approval</p>
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-300">{t('tenants.pendingRequestAwaitingApproval')}</p>
                 <p className="text-sm text-blue-800 dark:text-blue-400 mt-1">
                   {pendingRegistration.fullName} ({pendingRegistration.email})
                 </p>
@@ -661,20 +663,20 @@ export const TenantsPage: React.FC = () => {
             ) : null}
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               {pendingRegistration
-                ? 'Approving seeds default roles, menus, and creates the admin account above with the credentials they submitted.'
-                : 'Seeds default roles, menus and a generic admin user for this tenant. Safe to re-run.'}{' '}
-              Optionally pick a subscription plan to entitle its modules at the same time; leave blank to entitle only
+                ? t('tenants.approveHint')
+                : t('tenants.provisionHint')}{' '}
+              {t('tenants.optionallyPickASubscriptionPlanToEntitle')}
               the Core module.
             </p>
             <div className="space-y-4">
               <div className="space-y-1">
-                <label htmlFor="subscription-plan" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subscription Plan</label>
+                <label htmlFor="subscription-plan" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('tenants.subscriptionPlan')}</label>
                 <select id="subscription-plan"
                   value={provisionPlanId}
                   onChange={(e) => setProvisionPlanId(e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">No plan (Core module only)</option>
+                  <option value="">{t('tenants.noPlanCoreModuleOnly')}</option>
                   {subscriptionPlans.map((plan) => (
                     <option key={plan.id} value={plan.id}>{plan.name}</option>
                   ))}
@@ -687,7 +689,7 @@ export const TenantsPage: React.FC = () => {
                   disabled={provisionMutation.isPending || approveRegistrationMutation.isPending}
                   className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="button"
@@ -721,10 +723,10 @@ export const TenantsPage: React.FC = () => {
           Share this link with the tenant's admin (email, SMS, chat — however you'd send a message). Opening it lets
           them submit their name, email and password as a request — it does not grant access on its own. Review it
           under "Activate" for this tenant once they've submitted, and approve to actually activate the tenant.
-          Valid for 7 days or until submitted.
+          {t('tenants.validFor7DaysOrUntilSubmitted')}
         </p>
         {registrationLinkMutation.isPending ? (
-          <div className="p-8 text-center text-gray-400">Generating link...</div>
+          <div className="p-8 text-center text-gray-400">{t('tenants.generatingLink')}</div>
         ) : registrationLink ? (
           <div className="space-y-4">
             <div className="flex items-stretch gap-2">
@@ -740,12 +742,12 @@ export const TenantsPage: React.FC = () => {
                 onClick={async () => {
                   await navigator.clipboard.writeText(registrationLink.url);
                   setLinkCopied(true);
-                  toast.success('Link copied to clipboard');
+                  toast.success(t('tenants.linkCopiedToClipboard'));
                 }}
                 className="px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5 shrink-0"
               >
                 {linkCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {linkCopied ? 'Copied' : 'Copy'}
+                {linkCopied ? t('tenants.copied') : t('common.copy')}
               </button>
             </div>
             <p className="text-xs text-gray-400">
@@ -757,7 +759,7 @@ export const TenantsPage: React.FC = () => {
                 onClick={() => { setLinkTenant(null); setRegistrationLink(null); }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
               >
-                Close
+                {t('common.close')}
               </button>
             </div>
           </div>
@@ -784,7 +786,7 @@ export const TenantsPage: React.FC = () => {
               onChange={(e) => setAssignPlanId(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Select a plan</option>
+              <option value="">{t('tenants.selectAPlan')}</option>
               {subscriptionPlans.map((plan) => (
                 <option key={plan.id} value={plan.id}>{plan.name}</option>
               ))}
@@ -797,7 +799,7 @@ export const TenantsPage: React.FC = () => {
               disabled={assignPlanMutation.isPending}
               className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="button"
@@ -809,7 +811,7 @@ export const TenantsPage: React.FC = () => {
               }
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
-              Assign Plan
+              {t('tenants.assignPlan')}
             </button>
           </div>
         </div>
@@ -822,20 +824,20 @@ export const TenantsPage: React.FC = () => {
         size="md"
       >
         {loadingLicense ? (
-          <div className="p-8 text-center text-gray-400">Loading...</div>
+          <div className="p-8 text-center text-gray-400">{t('common.loading')}</div>
         ) : (
           <div className="space-y-5">
             {licenseStatus && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Current status:</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{t('tenants.currentStatus')}</span>
                 <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${LICENSE_STATUS_STYLES[licenseStatus.status]}`}>
-                  {LICENSE_STATUS_LABELS[licenseStatus.status]}
+                  {t(LICENSE_STATUS_KEYS[licenseStatus.status])}
                 </span>
               </div>
             )}
 
             <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-              <label htmlFor="start-trial" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Start Trial</label>
+              <label htmlFor="start-trial" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('tenants.startTrial')}</label>
               <div className="flex gap-2">
                 <input id="start-trial"
                   type="date"
@@ -849,13 +851,13 @@ export const TenantsPage: React.FC = () => {
                   onClick={() => licenseTenant && startTrialMutation.mutate({ id: licenseTenant.id, trialEndsAtUtc: new Date(trialDate).toISOString() })}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 shrink-0"
                 >
-                  Start
+                  {t('tenants.start')}
                 </button>
               </div>
             </div>
 
             <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-              <label htmlFor="license-expiry" className="block text-sm font-medium text-gray-700 dark:text-gray-300">License Expiry</label>
+              <label htmlFor="license-expiry" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('tenants.licenseExpiry')}</label>
               <div className="flex gap-2">
                 <input id="license-expiry"
                   type="date"
@@ -869,7 +871,7 @@ export const TenantsPage: React.FC = () => {
                   onClick={() => licenseTenant && setExpiryMutation.mutate({ id: licenseTenant.id, licenseExpiresAtUtc: new Date(expiryDate).toISOString() })}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 shrink-0"
                 >
-                  Set
+                  {t('tenants.set')}
                 </button>
                 <button
                   type="button"
@@ -877,10 +879,10 @@ export const TenantsPage: React.FC = () => {
                   onClick={() => licenseTenant && setExpiryMutation.mutate({ id: licenseTenant.id, licenseExpiresAtUtc: null })}
                   className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 shrink-0"
                 >
-                  Clear
+                  {t('tenants.clear')}
                 </button>
               </div>
-              <p className="text-xs text-gray-400">No expiry means an unmanaged/perpetual license.</p>
+              <p className="text-xs text-gray-400">{t('tenants.noExpiryMeansAnUnmanagedPerpetualLicense')}</p>
             </div>
 
             <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -891,7 +893,7 @@ export const TenantsPage: React.FC = () => {
                   onClick={() => licenseTenant && unsuspendMutation.mutate(licenseTenant.id)}
                   className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
                 >
-                  Unsuspend
+                  {t('tenants.unsuspend')}
                 </button>
               ) : (
                 <button
@@ -900,7 +902,7 @@ export const TenantsPage: React.FC = () => {
                   onClick={() => licenseTenant && suspendMutation.mutate(licenseTenant.id)}
                   className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                 >
-                  Suspend
+                  {t('tenants.suspend')}
                 </button>
               )}
             </div>
@@ -915,15 +917,15 @@ export const TenantsPage: React.FC = () => {
         size="md"
       >
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Custom domains and subdomains that resolve to this tenant for anonymous requests (e.g. the login page).
+          {t('tenants.customDomainsAndSubdomainsThatResolveToT')}
         </p>
         {loadingDomains ? (
-          <div className="p-8 text-center text-gray-400">Loading...</div>
+          <div className="p-8 text-center text-gray-400">{t('common.loading')}</div>
         ) : (
           <div className="space-y-4">
             {domains.length === 0 ? (
               <div className="p-6 text-center text-gray-400 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg text-sm">
-                No custom domains configured
+                {t('tenants.noCustomDomainsConfigured')}
               </div>
             ) : (
               <div className="divide-y divide-gray-100 dark:divide-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-lg">
@@ -956,7 +958,7 @@ export const TenantsPage: React.FC = () => {
                 onClick={() => domainsTenant && addDomainMutation.mutate({ id: domainsTenant.id, domain: newDomain.trim() })}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 shrink-0"
               >
-                Add
+                {t('common.add')}
               </button>
             </div>
           </div>
@@ -971,11 +973,11 @@ export const TenantsPage: React.FC = () => {
       >
         <div className="space-y-4">
           <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-            <p className="text-sm font-medium text-red-900 dark:text-red-300">This is irreversible</p>
+            <p className="text-sm font-medium text-red-900 dark:text-red-300">{t('tenants.thisIsIrreversible')}</p>
             <p className="text-sm text-red-800 dark:text-red-400 mt-1">
-              Permanently deletes every user, role, menu, site setting, feature flag, module entitlement and domain
+              {t('tenants.permanentlyDeletesEveryUserRoleMenuSiteS')}
               for this tenant, plus the tenant record itself. Audit log entries referencing this tenant are kept.
-              Only allowed once the tenant has been disabled and stayed disabled past the configured cooling-off
+              {t('tenants.onlyAllowedOnceTheTenantHasBeenDisabledA')}
               period — if it's too soon, the server will reject this with the remaining wait time.
             </p>
           </div>
@@ -997,7 +999,7 @@ export const TenantsPage: React.FC = () => {
               disabled={purgeMutation.isPending}
               className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="button"
@@ -1005,7 +1007,7 @@ export const TenantsPage: React.FC = () => {
               onClick={() => purgeTenant && purgeMutation.mutate({ id: purgeTenant.id, confirmSlug: purgeConfirmSlug })}
               className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
             >
-              Permanently Purge
+              {t('tenants.permanentlyPurge')}
             </button>
           </div>
         </div>

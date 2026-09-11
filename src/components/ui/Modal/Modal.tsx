@@ -23,12 +23,13 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
   return portal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
+      role="presentation"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200`}
       >
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">

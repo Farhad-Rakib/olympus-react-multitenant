@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Pencil } from 'lucide-react';
 import { featureFlagsApi, FeatureFlagDto } from '../../../core/api/services/feature-flags.api';
@@ -27,6 +28,7 @@ const ToggleSwitch: React.FC<{ checked: boolean; disabled?: boolean; onChange: (
 );
 
 export const FeatureFlagsPage: React.FC = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editItem, setEditItem] = useState<FeatureFlagDto | null>(null);
@@ -42,22 +44,22 @@ export const FeatureFlagsPage: React.FC = () => {
     mutationFn: (dto: { key: string; isEnabled: boolean; rolloutPercentage: number }) => featureFlagsApi.set(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
-      toast.success('Feature flag saved');
+      toast.success(t('featureFlags.featureFlagSaved'));
       setShowAddModal(false);
       setEditItem(null);
       setFormData({ key: '', isEnabled: true, rolloutPercentage: '100' });
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to save feature flag')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('featureFlags.failedToSaveFeatureFlag'))),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => featureFlagsApi.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
-      toast.success('Feature flag deleted');
+      toast.success(t('featureFlags.featureFlagDeleted'));
       setDeleteId(null);
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to delete feature flag')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('featureFlags.failedToDeleteFeatureFlag'))),
   });
 
   // Toggling an existing flag's IsEnabled directly from the list re-sends its current
@@ -67,7 +69,7 @@ export const FeatureFlagsPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update feature flag')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('featureFlags.failedToUpdateFeatureFlag'))),
   });
 
   const openEditModal = (flag: FeatureFlagDto) => {
@@ -92,7 +94,7 @@ export const FeatureFlagsPage: React.FC = () => {
   const renderForm = (onSubmit: () => void, submitLabel: string, isPending: boolean, onCancel: () => void) => (
     <div className="space-y-4">
       <div>
-        <label htmlFor="key" className={labelCls}>Key</label>
+        <label htmlFor="key" className={labelCls}>{t('common.key')}</label>
         <input id="key"
           value={formData.key}
           onChange={(e) => setFormData((prev) => ({ ...prev, key: e.target.value }))}
@@ -101,14 +103,14 @@ export const FeatureFlagsPage: React.FC = () => {
         />
       </div>
       <div className="flex items-center justify-between">
-        <label htmlFor="enabled" className={labelCls + ' mb-0'}>Enabled</label>
+        <label htmlFor="enabled" className={labelCls + ' mb-0'}>{t('common.enabled')}</label>
         <ToggleSwitch
           checked={formData.isEnabled}
           onChange={() => setFormData((prev) => ({ ...prev, isEnabled: !prev.isEnabled }))}
         />
       </div>
       <div>
-        <label htmlFor="rollout-percentage" className={labelCls}>Rollout Percentage</label>
+        <label htmlFor="rollout-percentage" className={labelCls}>{t('featureFlags.rolloutPercentage')}</label>
         <input id="rollout-percentage"
           type="number"
           min={0}
@@ -126,7 +128,7 @@ export const FeatureFlagsPage: React.FC = () => {
           onClick={onCancel}
           className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
         >
-          Cancel
+          {t('common.cancel')}
         </button>
         <button
           onClick={onSubmit}
@@ -142,15 +144,15 @@ export const FeatureFlagsPage: React.FC = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Feature Flags</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Toggle features on or off for this tenant, with optional gradual rollout</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('featureFlags.featureFlags')}</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('featureFlags.toggleFeaturesOnOrOffForThisTenantWithOp')}</p>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Flags</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Flags not listed here are treated as disabled by default</p>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('featureFlags.flags')}</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('featureFlags.flagsNotListedHereAreTreatedAsDisabledBy')}</p>
           </div>
           <button
             onClick={openAddModal}
@@ -167,15 +169,15 @@ export const FeatureFlagsPage: React.FC = () => {
             </div>
           ) : flags.length === 0 ? (
             <div className="p-12 text-center text-gray-500 dark:text-gray-400">
-              <p className="text-sm">No feature flags configured yet</p>
+              <p className="text-sm">{t('featureFlags.noFeatureFlagsConfiguredYet')}</p>
             </div>
           ) : (
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-900/50">
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Key</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rollout</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Enabled</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('common.key')}</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('featureFlags.rollout')}</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('common.enabled')}</th>
                   <th className="w-28 px-6 py-3"></th>
                 </tr>
               </thead>
@@ -215,21 +217,21 @@ export const FeatureFlagsPage: React.FC = () => {
         </div>
       </div>
 
-      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add Feature Flag" size="md">
+      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title={t('featureFlags.addFeatureFlag')} size="md">
         {renderForm(submitForm, 'Create', setMutation.isPending, () => setShowAddModal(false))}
       </Modal>
 
-      <Modal isOpen={editItem !== null} onClose={() => setEditItem(null)} title="Edit Feature Flag" size="md">
-        {editItem && renderForm(submitForm, 'Save Changes', setMutation.isPending, () => setEditItem(null))}
+      <Modal isOpen={editItem !== null} onClose={() => setEditItem(null)} title={t('featureFlags.editFeatureFlag')} size="md">
+        {editItem && renderForm(submitForm, t('featureFlags.saveChanges'), setMutation.isPending, () => setEditItem(null))}
       </Modal>
 
       <ConfirmDialog
         isOpen={deleteId !== null}
         onClose={() => setDeleteId(null)}
         onConfirm={() => deleteId !== null && deleteMutation.mutate(deleteId)}
-        title="Delete Feature Flag"
-        message="Are you sure you want to delete this feature flag? This action cannot be undone."
-        confirmText="Delete"
+        title={t('featureFlags.deleteFeatureFlag')}
+        message={t('featureFlags.areYouSureYouWantToDeleteThisFeatureFlag')}
+        confirmText={t('common.delete')}
         variant="danger"
       />
     </div>

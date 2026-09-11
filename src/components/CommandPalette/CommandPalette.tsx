@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Search, LayoutDashboard, Users, FileText, Settings, Activity, Sliders, Moon, Sun, LogOut } from 'lucide-react';
 import { useAuthStore } from '../../features/auth/store/auth.store';
@@ -14,6 +15,7 @@ interface Command {
 }
 
 export const CommandPalette: React.FC = () => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
@@ -28,14 +30,14 @@ export const CommandPalette: React.FC = () => {
   }, [navigate]);
 
   const commands: Command[] = useMemo(() => [
-    { id: 'dashboard', label: 'Go to Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, category: 'Navigation', action: () => go('/dashboard'), keywords: 'home overview' },
-    { id: 'users', label: 'Go to Users', icon: <Users className="w-4 h-4" />, category: 'Navigation', action: () => go('/users'), keywords: 'people accounts' },
-    { id: 'reports', label: 'Go to Reports', icon: <FileText className="w-4 h-4" />, category: 'Navigation', action: () => go('/reports') },
-    { id: 'settings', label: 'Go to Settings', icon: <Settings className="w-4 h-4" />, category: 'Navigation', action: () => go('/settings/general') },
-    { id: 'activity', label: 'Go to Activity Log', icon: <Activity className="w-4 h-4" />, category: 'Navigation', action: () => go('/activity'), keywords: 'audit log history' },
-    { id: 'preferences', label: 'Go to Preferences', icon: <Sliders className="w-4 h-4" />, category: 'Navigation', action: () => go('/preferences'), keywords: 'theme density display' },
-    { id: 'theme', label: theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode', icon: theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />, category: 'Actions', action: () => { toggleTheme(); setOpen(false); }, keywords: 'dark light mode appearance' },
-    { id: 'logout', label: 'Logout', icon: <LogOut className="w-4 h-4" />, category: 'Actions', action: () => { setOpen(false); logout(); navigate('/login'); }, keywords: 'sign out exit' },
+    { id: 'dashboard', label: t('commandPalette.goToDashboard'), icon: <LayoutDashboard className="w-4 h-4" />, category: 'Navigation', action: () => go('/dashboard'), keywords: 'home overview' },
+    { id: 'users', label: t('commandPalette.goToUsers'), icon: <Users className="w-4 h-4" />, category: 'Navigation', action: () => go('/users'), keywords: 'people accounts' },
+    { id: 'reports', label: t('commandPalette.goToReports'), icon: <FileText className="w-4 h-4" />, category: 'Navigation', action: () => go('/reports') },
+    { id: 'settings', label: t('commandPalette.goToSettings'), icon: <Settings className="w-4 h-4" />, category: 'Navigation', action: () => go('/settings/general') },
+    { id: 'activity', label: t('commandPalette.goToActivityLog'), icon: <Activity className="w-4 h-4" />, category: 'Navigation', action: () => go('/activity'), keywords: 'audit log history' },
+    { id: 'preferences', label: t('commandPalette.goToPreferences'), icon: <Sliders className="w-4 h-4" />, category: 'Navigation', action: () => go('/preferences'), keywords: 'theme density display' },
+    { id: 'theme', label: theme === 'dark' ? t('commandPalette.switchToLightMode') : t('commandPalette.switchToDarkMode'), icon: theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />, category: 'Actions', action: () => { toggleTheme(); setOpen(false); }, keywords: 'dark light mode appearance' },
+    { id: 'logout', label: t('commandPalette.logout'), icon: <LogOut className="w-4 h-4" />, category: 'Actions', action: () => { setOpen(false); logout(); navigate('/login'); }, keywords: 'sign out exit' },
   ], [go, theme, toggleTheme, logout, navigate]);
 
   const filtered = useMemo(() => {
@@ -90,14 +92,14 @@ export const CommandPalette: React.FC = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type a command or search..."
+              placeholder={t('commandPalette.typeACommandOrSearch')}
               className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none"
             />
             <kbd className="hidden sm:inline-flex px-1.5 py-0.5 text-[10px] font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 rounded">ESC</kbd>
           </div>
           <div className="max-h-72 overflow-y-auto py-2">
             {filtered.length === 0 ? (
-              <p className="px-4 py-8 text-sm text-center text-gray-400">No results found</p>
+              <p className="px-4 py-8 text-sm text-center text-gray-400">{t('commandPalette.noResultsFound')}</p>
             ) : (
               Object.entries(grouped).map(([cat, cmds]) => (
                 <div key={cat}>
@@ -126,9 +128,9 @@ export const CommandPalette: React.FC = () => {
             )}
           </div>
           <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 flex items-center gap-4 text-[10px] text-gray-400">
-            <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded font-medium">↑↓</kbd> Navigate</span>
-            <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded font-medium">↵</kbd> Select</span>
-            <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded font-medium">Esc</kbd> Close</span>
+            <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded font-medium">↑↓</kbd>{t('commandPalette.navigate')}</span>
+            <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded font-medium">↵</kbd>{t('commandPalette.select')}</span>
+            <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded font-medium">{t('commandPalette.esc')}</kbd>{t('common.close')}</span>
           </div>
         </div>
       </div>

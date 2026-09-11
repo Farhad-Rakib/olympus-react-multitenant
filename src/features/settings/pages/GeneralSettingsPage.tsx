@@ -1,16 +1,18 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Save, Download, Upload } from 'lucide-react';
 import { useSettingsStore } from '../store/settings.store';
 import { toast } from '../../../components/ui/Toast/toast.store';
 import { formatDateTime } from '../../../core/i18n/format';
 
 export const GeneralSettingsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { general, updateGeneral, exportAsJSON, lastSaved } = useSettingsStore();
   const [form, setForm] = useState(general);
 
   const handleSave = () => {
     updateGeneral(form);
-    toast.success('General settings saved');
+    toast.success(t('settings.generalSettingsSaved'));
   };
 
   const handleExport = () => {
@@ -22,7 +24,7 @@ export const GeneralSettingsPage: React.FC = () => {
     a.download = 'settings.json';
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Settings exported');
+    toast.success(t('settings.settingsExported'));
   };
 
   const handleImport = () => {
@@ -40,9 +42,9 @@ export const GeneralSettingsPage: React.FC = () => {
             setForm(data.general);
             updateGeneral(data.general);
           }
-          toast.success('Settings imported');
+          toast.success(t('settings.settingsImported'));
         } catch {
-          toast.error('Invalid JSON file');
+          toast.error(t('settings.invalidJsonFile'));
         }
       };
       reader.readAsText(file);
@@ -57,9 +59,9 @@ export const GeneralSettingsPage: React.FC = () => {
     <div className="space-y-6 max-w-3xl">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">General Settings</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('settings.generalSettings')}</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Manage your application configuration
+            {t('settings.manageYourApplicationConfiguration')}
             {lastSaved && (
               <span className="ml-2 text-xs text-gray-400">
                 Last saved: {formatDateTime(lastSaved)}
@@ -79,55 +81,55 @@ export const GeneralSettingsPage: React.FC = () => {
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
         <div className="p-6 space-y-5">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white">Application</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t('settings.application')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label htmlFor="site-name" className={labelCls}>Site Name</label>
+              <label htmlFor="site-name" className={labelCls}>{t('settings.siteName')}</label>
               <input id="site-name" value={form.siteName} onChange={(e) => setForm({ ...form, siteName: e.target.value })} className={inputCls} />
             </div>
             <div>
-              <label htmlFor="support-email" className={labelCls}>Support Email</label>
+              <label htmlFor="support-email" className={labelCls}>{t('settings.supportEmail')}</label>
               <input id="support-email" type="email" value={form.supportEmail} onChange={(e) => setForm({ ...form, supportEmail: e.target.value })} className={inputCls} />
             </div>
           </div>
           <div>
-            <label htmlFor="site-description" className={labelCls}>Site Description</label>
+            <label htmlFor="site-description" className={labelCls}>{t('settings.siteDescription')}</label>
             <textarea id="site-description" rows={3} value={form.siteDescription} onChange={(e) => setForm({ ...form, siteDescription: e.target.value })} className={`${inputCls} resize-none`} />
           </div>
         </div>
 
         <div className="p-6 space-y-5">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white">Localization</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t('settings.localization')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div>
-              <label htmlFor="timezone" className={labelCls}>Timezone</label>
+              <label htmlFor="timezone" className={labelCls}>{t('settings.timezone')}</label>
               <select id="timezone" value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })} className={inputCls}>
                 <option value="UTC">UTC</option>
-                <option value="America/New_York">Eastern Time</option>
-                <option value="America/Chicago">Central Time</option>
-                <option value="America/Denver">Mountain Time</option>
-                <option value="America/Los_Angeles">Pacific Time</option>
-                <option value="Europe/London">London</option>
-                <option value="Europe/Paris">Paris</option>
-                <option value="Asia/Tokyo">Tokyo</option>
+                <option value="America/New_York">{t('settings.easternTime')}</option>
+                <option value="America/Chicago">{t('settings.centralTime')}</option>
+                <option value="America/Denver">{t('settings.mountainTime')}</option>
+                <option value="America/Los_Angeles">{t('settings.pacificTime')}</option>
+                <option value="Europe/London">{t('settings.london')}</option>
+                <option value="Europe/Paris">{t('settings.paris')}</option>
+                <option value="Asia/Tokyo">{t('settings.tokyo')}</option>
               </select>
             </div>
             <div>
-              <label htmlFor="date-format" className={labelCls}>Date Format</label>
+              <label htmlFor="date-format" className={labelCls}>{t('settings.dateFormat')}</label>
               <select id="date-format" value={form.dateFormat} onChange={(e) => setForm({ ...form, dateFormat: e.target.value })} className={inputCls}>
-                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                <option value="MM/DD/YYYY">{t('settings.mmDdYyyy')}</option>
+                <option value="DD/MM/YYYY">{t('settings.ddMmYyyy')}</option>
+                <option value="YYYY-MM-DD">{t('settings.yyyyMmDd')}</option>
               </select>
             </div>
             <div>
-              <label htmlFor="language" className={labelCls}>Language</label>
+              <label htmlFor="language" className={labelCls}>{t('settings.language')}</label>
               <select id="language" value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })} className={inputCls}>
-                <option value="en">English</option>
-                <option value="es">Spanish</option>
-                <option value="fr">French</option>
-                <option value="de">German</option>
-                <option value="ja">Japanese</option>
+                <option value="en">{t('settings.english')}</option>
+                <option value="es">{t('settings.spanish')}</option>
+                <option value="fr">{t('settings.french')}</option>
+                <option value="de">{t('settings.german')}</option>
+                <option value="ja">{t('settings.japanese')}</option>
               </select>
             </div>
           </div>
@@ -136,8 +138,8 @@ export const GeneralSettingsPage: React.FC = () => {
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white">Maintenance Mode</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">When enabled, only admins can access the application</p>
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">{t('settings.maintenanceMode')}</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.whenEnabledOnlyAdminsCanAccessTheApplica')}</p>
             </div>
             <button
               onClick={() => setForm({ ...form, maintenanceMode: !form.maintenanceMode })}

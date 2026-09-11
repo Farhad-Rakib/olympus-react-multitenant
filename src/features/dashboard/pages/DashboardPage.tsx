@@ -11,11 +11,11 @@ import { Loader } from '../../../components/ui/Loader/Loader';
 import { formatDate, formatCurrency } from '../../../core/i18n/format';
 
 const LICENSE_LABEL: Record<LicenseStatus, string> = {
-  [LicenseStatus.Active]: 'Active',
-  [LicenseStatus.Trial]: 'Trial',
-  [LicenseStatus.GracePeriod]: 'Grace period',
-  [LicenseStatus.Expired]: 'Expired',
-  [LicenseStatus.Suspended]: 'Suspended',
+  [LicenseStatus.Active]: 'license.active',
+  [LicenseStatus.Trial]: 'license.trial',
+  [LicenseStatus.GracePeriod]: 'license.gracePeriod',
+  [LicenseStatus.Expired]: 'license.expired',
+  [LicenseStatus.Suspended]: 'license.suspended',
 };
 
 const LICENSE_TONE: Record<LicenseStatus, string> = {
@@ -112,7 +112,7 @@ export const DashboardPage: React.FC = () => {
           </p>
         </div>
         <span className={`self-start px-3 py-1 rounded-full text-xs font-medium ${LICENSE_TONE[data.licenseStatus]}`}>
-          {LICENSE_LABEL[data.licenseStatus]}
+          {t(LICENSE_LABEL[data.licenseStatus])}
         </span>
       </div>
 

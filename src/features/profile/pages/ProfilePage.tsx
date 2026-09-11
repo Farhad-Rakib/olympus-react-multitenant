@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { User, Shield, Lock, Eye, EyeOff, Pencil, X } from 'lucide-react';
 import { userApi } from '../../../core/api/services/user.api';
@@ -11,6 +12,7 @@ import { getApiErrorMessage } from '../../../core/utils/error';
 const authService = new AuthService();
 
 export const ProfilePage: React.FC = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -48,10 +50,10 @@ export const ProfilePage: React.FC = () => {
       userApi.updateMe(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-      toast.success('Profile updated successfully');
+      toast.success(t('profile.profileUpdatedSuccessfully'));
       setIsEditing(false);
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update profile')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('profile.failedToUpdateProfile'))),
   });
 
   const changePasswordMutation = useMutation({
@@ -64,11 +66,11 @@ export const ProfilePage: React.FC = () => {
       });
     },
     onSuccess: () => {
-      toast.success('Password changed successfully');
+      toast.success(t('profile.passwordChangedSuccessfully'));
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setShowChangePassword(false);
     },
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to change password')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('profile.failedToChangePassword'))),
   });
 
   const handleUploadImage = async (file: File): Promise<string> => {
@@ -79,11 +81,11 @@ export const ProfilePage: React.FC = () => {
   const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault();
     if (!profileForm.fullName.trim()) {
-      toast.error('Full name is required');
+      toast.error(t('profile.fullNameIsRequired'));
       return;
     }
     if (!profileForm.email.trim()) {
-      toast.error('Email is required');
+      toast.error(t('profile.emailIsRequired'));
       return;
     }
     updateProfileMutation.mutate(profileForm);
@@ -92,11 +94,11 @@ export const ProfilePage: React.FC = () => {
   const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('New passwords do not match');
+      toast.error(t('profile.newPasswordsDoNotMatch'));
       return;
     }
     if (passwordForm.newPassword.length < 6) {
-      toast.error('New password must be at least 6 characters');
+      toast.error(t('profile.newPasswordMustBeAtLeast6Characters'));
       return;
     }
     changePasswordMutation.mutate();
@@ -133,8 +135,8 @@ export const ProfilePage: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Profile</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Your account information</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('profile.profile')}</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('profile.yourAccountInformation')}</p>
       </div>
 
       {/* Profile Card */}
@@ -164,7 +166,7 @@ export const ProfilePage: React.FC = () => {
                   : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
               }`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${profile?.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                {profile?.isActive ? 'Active' : 'Inactive'}
+                {profile?.isActive ? t('common.active') : t('common.inactive')}
               </span>
               {!isEditing && (
                 <button
@@ -172,7 +174,7 @@ export const ProfilePage: React.FC = () => {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                 >
                   <Pencil className="w-3.5 h-3.5" />
-                  Edit Profile
+                  {t('profile.editProfile')}
                 </button>
               )}
             </div>
@@ -187,7 +189,7 @@ export const ProfilePage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Pencil className="w-5 h-5 text-gray-400" />
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Edit Profile</h3>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">{t('profile.editProfile')}</h3>
               </div>
               <button onClick={cancelEdit} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                 <X className="w-5 h-5" />
@@ -199,7 +201,7 @@ export const ProfilePage: React.FC = () => {
               value={profileForm.profileImageUrl}
               onChange={(url) => setProfileForm(prev => ({ ...prev, profileImageUrl: url }))}
               onUpload={handleUploadImage}
-              label="Profile Photo"
+              label={t('profile.profilePhoto')}
               hint="Upload a profile photo. Recommended size: 256x256px."
               previewSize="md"
               shape="circle"
@@ -207,25 +209,25 @@ export const ProfilePage: React.FC = () => {
             />
 
             <div>
-              <label htmlFor="full-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Full Name</label>
+              <label htmlFor="full-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('profile.fullName')}</label>
               <input id="full-name"
                 type="text"
                 value={profileForm.fullName}
                 onChange={(e) => setProfileForm(prev => ({ ...prev, fullName: e.target.value }))}
                 required
                 className={inputCls}
-                placeholder="Enter your full name"
+                placeholder={t('profile.enterYourFullName')}
               />
             </div>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('common.email')}</label>
               <input id="email"
                 type="email"
                 value={profileForm.email}
                 onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
                 required
                 className={inputCls}
-                placeholder="Enter your email"
+                placeholder={t('profile.enterYourEmail')}
               />
             </div>
             <div className="flex gap-3 pt-2">
@@ -234,14 +236,14 @@ export const ProfilePage: React.FC = () => {
                 onClick={cancelEdit}
                 className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
                 disabled={updateProfileMutation.isPending}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
               >
-                {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                {updateProfileMutation.isPending ? t('common.saving') : t('profile.saveChanges')}
               </button>
             </div>
           </form>
@@ -254,26 +256,26 @@ export const ProfilePage: React.FC = () => {
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2">
               <User className="w-5 h-5 text-gray-400" />
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Account Details</h3>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">{t('profile.accountDetails')}</h3>
             </div>
           </div>
           <div className="p-6 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Full Name</span>
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('profile.fullName')}</span>
                 <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">{profile?.fullName || '-'}</p>
               </div>
               <div>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Email</span>
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('common.email')}</span>
                 <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">{profile?.email || '-'}</p>
               </div>
               <div>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">User ID</span>
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('profile.userId')}</span>
                 <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">{profile?.id || '-'}</p>
               </div>
               <div>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Status</span>
-                <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">{profile?.isActive ? 'Active' : 'Inactive'}</p>
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('common.status')}</span>
+                <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">{profile?.isActive ? t('common.active') : t('common.inactive')}</p>
               </div>
             </div>
           </div>
@@ -286,7 +288,7 @@ export const ProfilePage: React.FC = () => {
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-gray-400" />
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Roles</h3>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">{t('common.roles')}</h3>
             </div>
           </div>
           <div className="p-6">
@@ -310,14 +312,14 @@ export const ProfilePage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Lock className="w-5 h-5 text-gray-400" />
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Change Password</h3>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">{t('profile.changePassword')}</h3>
             </div>
             {!showChangePassword && (
               <button
                 onClick={() => setShowChangePassword(true)}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
-                Change Password
+                {t('profile.changePassword')}
               </button>
             )}
           </div>
@@ -326,7 +328,7 @@ export const ProfilePage: React.FC = () => {
         {showChangePassword && (
           <form onSubmit={handleChangePassword} className="p-6 space-y-4">
             <div>
-              <label htmlFor="current-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Current Password</label>
+              <label htmlFor="current-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('profile.currentPassword')}</label>
               <div className="relative">
                 <input id="current-password"
                   type={showCurrentPw ? 'text' : 'password'}
@@ -334,7 +336,7 @@ export const ProfilePage: React.FC = () => {
                   onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
                   required
                   className={inputCls}
-                  placeholder="Enter current password"
+                  placeholder={t('profile.enterCurrentPassword')}
                 />
                 <button
                   type="button"
@@ -346,7 +348,7 @@ export const ProfilePage: React.FC = () => {
               </div>
             </div>
             <div>
-              <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">New Password</label>
+              <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('profile.newPassword')}</label>
               <div className="relative">
                 <input id="new-password"
                   type={showNewPw ? 'text' : 'password'}
@@ -354,7 +356,7 @@ export const ProfilePage: React.FC = () => {
                   onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
                   required
                   className={inputCls}
-                  placeholder="Enter new password"
+                  placeholder={t('profile.enterNewPassword')}
                 />
                 <button
                   type="button"
@@ -366,14 +368,14 @@ export const ProfilePage: React.FC = () => {
               </div>
             </div>
             <div>
-              <label htmlFor="confirm-new-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Confirm New Password</label>
+              <label htmlFor="confirm-new-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('profile.confirmNewPassword')}</label>
               <input id="confirm-new-password"
                 type="password"
                 value={passwordForm.confirmPassword}
                 onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
                 required
                 className={inputCls}
-                placeholder="Confirm new password"
+                placeholder={t('profile.confirmNewPassword2')}
               />
             </div>
             <div className="flex gap-3 pt-2">
@@ -385,14 +387,14 @@ export const ProfilePage: React.FC = () => {
                 }}
                 className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
                 disabled={changePasswordMutation.isPending}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
               >
-                {changePasswordMutation.isPending ? 'Updating...' : 'Update Password'}
+                {changePasswordMutation.isPending ? t('profile.updating') : t('profile.updatePassword')}
               </button>
             </div>
           </form>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getApiErrorMessage } from '../../../core/utils/error';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
@@ -7,6 +8,7 @@ import { toast } from '../../../components/ui/Toast/toast.store';
 import { tenantRegistrationApi } from '../../../core/api/services/tenant-registration.api';
 
 export const RegisterTenantPage: React.FC = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
 
@@ -23,13 +25,13 @@ export const RegisterTenantPage: React.FC = () => {
   const submitMutation = useMutation({
     mutationFn: () => tenantRegistrationApi.submit({ token, fullName: form.fullName, email: form.email, password: form.password }),
     onSuccess: () => setJustSubmitted(true),
-    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to submit registration')),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('auth.failedToSubmitRegistration'))),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error(t('auth.passwordsDoNotMatch'));
       return;
     }
     submitMutation.mutate();
@@ -39,27 +41,27 @@ export const RegisterTenantPage: React.FC = () => {
     return (
       <div className="text-center py-4">
         <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Missing registration link</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('auth.missingRegistrationLink')}</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          This page needs a registration link. Ask whoever invited you for the link they shared.
+          {t('auth.thisPageNeedsARegistrationLinkAskWhoever')}
         </p>
       </div>
     );
   }
 
   if (loadingInfo) {
-    return <div className="text-center py-8 text-gray-400">Checking your registration link...</div>;
+    return <div className="text-center py-8 text-gray-400">{t('auth.checkingYourRegistrationLink')}</div>;
   }
 
   if (infoError || !info) {
     return (
       <div className="text-center py-4">
         <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Link invalid or expired</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('auth.linkInvalidOrExpired')}</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          {getApiErrorMessage(infoError, 'This registration link is no longer valid.')}
+          {getApiErrorMessage(infoError, t('auth.thisRegistrationLinkIsNoLongerValid'))}
         </p>
-        <Link to="/login" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Back to Sign In</Link>
+        <Link to="/login" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">{t('auth.backToSignIn')}</Link>
       </div>
     );
   }
@@ -68,12 +70,12 @@ export const RegisterTenantPage: React.FC = () => {
     return (
       <div className="text-center py-4">
         <Clock className="w-10 h-10 text-blue-500 mx-auto mb-3" />
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Request submitted</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('auth.requestSubmitted')}</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
           Your request to set up <strong>{info.tenantName}</strong> has been sent to an administrator for approval.
           You'll be able to sign in once it's approved — no action needed from you until then.
         </p>
-        <Link to="/login" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Back to Sign In</Link>
+        <Link to="/login" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">{t('auth.backToSignIn')}</Link>
       </div>
     );
   }
@@ -83,14 +85,14 @@ export const RegisterTenantPage: React.FC = () => {
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Set up {info.tenantName}</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Submit your admin details. An administrator will review and approve before your organization goes live.
+          {t('auth.submitYourAdminDetailsAnAdministratorWil')}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Full name
+            {t('auth.fullName')}
           </label>
           <input
             id="fullName"
@@ -100,13 +102,13 @@ export const RegisterTenantPage: React.FC = () => {
             required
             disabled={submitMutation.isPending}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            placeholder="Jane Doe"
+            placeholder={t('auth.janeDoe')}
           />
         </div>
 
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Email address
+            {t('auth.emailAddress')}
           </label>
           <input
             id="email"
@@ -122,7 +124,7 @@ export const RegisterTenantPage: React.FC = () => {
 
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Password
+            {t('common.password')}
           </label>
           <input
             id="password"
@@ -133,13 +135,13 @@ export const RegisterTenantPage: React.FC = () => {
             minLength={8}
             disabled={submitMutation.isPending}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            placeholder="At least 8 characters"
+            placeholder={t('auth.atLeast8Characters')}
           />
         </div>
 
         <div>
           <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Confirm password
+            {t('auth.confirmPassword')}
           </label>
           <input
             id="confirmPassword"
@@ -149,7 +151,7 @@ export const RegisterTenantPage: React.FC = () => {
             required
             disabled={submitMutation.isPending}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            placeholder="Re-enter your password"
+            placeholder={t('auth.reEnterYourPassword')}
           />
         </div>
 
@@ -161,12 +163,12 @@ export const RegisterTenantPage: React.FC = () => {
           {submitMutation.isPending ? (
             <>
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Submitting...
+              {t('auth.submitting')}
             </>
           ) : (
             <>
               <Send className="w-4 h-4" />
-              Submit for approval
+              {t('auth.submitForApproval')}
             </>
           )}
         </button>
