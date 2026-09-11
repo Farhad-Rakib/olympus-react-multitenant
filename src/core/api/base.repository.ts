@@ -227,6 +227,14 @@ export class BaseRepository implements IBaseRepository {
       axiosConfig.params = config.params;
     }
 
+    if (config?.responseType) {
+      axiosConfig.responseType = config.responseType;
+    }
+
+    if (config?.onUploadProgress) {
+      axiosConfig.onUploadProgress = config.onUploadProgress;
+    }
+
     if (config?.headers || config?.contentType) {
       axiosConfig.headers = {
         ...config?.headers,

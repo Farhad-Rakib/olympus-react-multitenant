@@ -7,6 +7,8 @@ export interface HttpRequestConfig {
   // no implicit index signature, so it is not assignable to a Record. Serialisation is axios's job.
   params?: unknown;
   headers?: Record<string, string>;
+  responseType?: 'json' | 'blob' | 'arraybuffer' | 'text';
+  onUploadProgress?: (event: { loaded: number; total?: number }) => void;
 }
 
 export interface PaginatedRequest {

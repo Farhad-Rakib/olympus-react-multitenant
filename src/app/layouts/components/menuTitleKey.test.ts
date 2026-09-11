@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { menuTitleKey } from './Sidebar';
+import { menuTitleKey } from './menuTitleKey';
 
 describe('menuTitleKey', () => {
   it('slugs a server menu title into a valid translation key', () => {
