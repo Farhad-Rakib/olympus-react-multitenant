@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, Shield } from 'lucide-react';
 import { toast } from '../../../components/ui/Toast/toast.store';
 import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
+import { getApiErrorMessage } from '../../../core/utils/error';
 
 interface RoleDto {
   id: number;
@@ -76,6 +78,7 @@ const ToggleSwitch: React.FC<{ checked: boolean; disabled?: boolean; onChange: (
 );
 
 export const RolePermissionsPage: React.FC = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [searchInput, setSearchInput] = useState('');
@@ -101,15 +104,15 @@ export const RolePermissionsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['role-permissions-toggle', selectedRoleId] });
       queryClient.invalidateQueries({ queryKey: ['roles'] });
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to update permission'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('rolePermissions.failedToUpdatePermission'))),
     onSettled: () => setPendingId(null),
   });
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Role Permissions</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Toggle permissions on or off for each role</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('rolePermissions.rolePermissions')}</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('rolePermissions.togglePermissionsOnOrOffForEachRole')}</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -117,7 +120,7 @@ export const RolePermissionsPage: React.FC = () => {
         <div className="w-full lg:w-72 shrink-0">
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Select Role</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t('rolePermissions.selectRole')}</h3>
             </div>
             <div className="divide-y divide-gray-100 dark:divide-gray-700/50 max-h-96 overflow-y-auto">
               {roles.map(role => (
@@ -138,7 +141,7 @@ export const RolePermissionsPage: React.FC = () => {
                 </button>
               ))}
               {roles.length === 0 && (
-                <p className="px-4 py-6 text-sm text-gray-400 text-center">No roles found</p>
+                <p className="px-4 py-6 text-sm text-gray-400 text-center">{t('rolePermissions.noRolesFound')}</p>
               )}
             </div>
           </div>
@@ -149,7 +152,7 @@ export const RolePermissionsPage: React.FC = () => {
           {selectedRoleId === null ? (
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center">
               <Shield className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-              <p className="text-gray-500 dark:text-gray-400">Select a role to manage its permissions</p>
+              <p className="text-gray-500 dark:text-gray-400">{t('rolePermissions.selectARoleToManageItsPermissions')}</p>
             </div>
           ) : (
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
@@ -163,16 +166,16 @@ export const RolePermissionsPage: React.FC = () => {
                     type="text"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
-                    placeholder="Search permissions..."
+                    placeholder={t('rolePermissions.searchPermissions')}
                     className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
 
               {loadingPerms ? (
-                <div className="p-8 text-center text-gray-400">Loading...</div>
+                <div className="p-8 text-center text-gray-400">{t('common.loading')}</div>
               ) : permissions.length === 0 ? (
-                <div className="p-8 text-center text-gray-400">No permissions match your search</div>
+                <div className="p-8 text-center text-gray-400">{t('rolePermissions.noPermissionsMatchYourSearch')}</div>
               ) : (
                 <div className="divide-y divide-gray-100 dark:divide-gray-700/50 max-h-[28rem] overflow-y-auto">
                   {permissions.map(perm => (

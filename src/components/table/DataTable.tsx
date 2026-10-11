@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, ChevronDown, ChevronUp, ChevronsUpDown, Plus } from 'lucide-react';
 import { Loader } from '../ui/Loader/Loader';
 import { EmptyState } from '../ui/EmptyState/EmptyState';
@@ -17,7 +18,7 @@ export interface Column<T> {
   key: keyof T | string;
   label: string;
   sortable?: boolean;
-  render?: (value: any, row: T) => React.ReactNode;
+  render?: (value: unknown, row: T) => React.ReactNode;
   width?: string;
 }
 
@@ -52,9 +53,23 @@ interface DataTableProps<T> {
   };
   rowActions?: RowAction<T>[];
   onRetry?: () => void;
+  // Bulk selection: pass a key selector to show a checkbox column; bulkActions render in a bar
+  // above the table while at least one row is selected.
+  rowKey?: (row: T) => string | number;
+  bulkActions?: BulkAction<T>[];
 }
 
-export function DataTable<T extends Record<string, any>>({
+export interface BulkAction<T> {
+  label: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  onClick: (rows: T[]) => void | Promise<void>;
+  variant?: 'primary' | 'secondary' | 'danger';
+}
+
+// `object` rather than Record<string, unknown>: a TypeScript interface has no implicit index
+// signature, so every DTO in this codebase would fail a Record constraint. Cell values are read
+// through an explicit `keyof T` cast at the indexing site below.
+export function DataTable<T extends object>({
   columns,
   data,
   isLoading,
@@ -70,8 +85,18 @@ export function DataTable<T extends Record<string, any>>({
   actions,
   rowActions,
   onRetry,
+  rowKey,
+  bulkActions,
 }: DataTableProps<T>) {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selected, setSelected] = useState<Set<string | number>>(new Set());
+  const selectable = !!rowKey && !!bulkActions && bulkActions.length > 0;
+  const keys = selectable ? data.map((r) => rowKey!(r)) : [];
+  const allSelected = selectable && keys.length > 0 && keys.every((k) => selected.has(k));
+  const selectedRows = selectable ? data.filter((r) => selected.has(rowKey!(r))) : [];
+  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(keys));
+  const toggleOne = (k: string | number) => setSelected((prev) => { const next = new Set(prev); if (next.has(k)) next.delete(k); else next.add(k); return next; });
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T | null;
     order: 'asc' | 'desc';
@@ -146,11 +171,32 @@ export function DataTable<T extends Record<string, any>>({
         )}
       </div>
 
+      {selectable && selectedRows.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 px-4 py-2 text-sm">
+          <span className="font-medium text-blue-800 dark:text-blue-200">{selectedRows.length} selected</span>
+          {bulkActions!.map((action) => {
+            const Icon = action.icon;
+            const cls = action.variant === 'danger' ? 'text-red-700 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300' : action.variant === 'primary' ? 'text-white bg-blue-600 hover:bg-blue-700' : 'text-gray-700 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600';
+            return (
+              <button key={action.label} type="button" onClick={() => void Promise.resolve(action.onClick(selectedRows)).then(() => setSelected(new Set()))} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${cls}`}>
+                {Icon && <Icon className="w-3.5 h-3.5" />}{action.label}
+              </button>
+            );
+          })}
+          <button type="button" onClick={() => setSelected(new Set())} className="ml-auto text-xs text-blue-700 dark:text-blue-300 hover:underline">{t('table.clear')}</button>
+        </div>
+      )}
+
       <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
               <tr>
+                {selectable && (
+                  <th className="px-4 py-3 w-10">
+                    <input type="checkbox" aria-label={t('table.selectAllRows')} checked={allSelected} onChange={toggleAll} className="rounded border-gray-300 dark:border-gray-600" />
+                  </th>
+                )}
                 {columns.map((column) => (
                   <th
                     key={String(column.key)}
@@ -172,7 +218,7 @@ export function DataTable<T extends Record<string, any>>({
                 ))}
                 {rowActions && rowActions.length > 0 && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Actions
+                    {t('common.actions')}
                   </th>
                 )}
               </tr>
@@ -196,9 +242,14 @@ export function DataTable<T extends Record<string, any>>({
               ) : (
                 data.map((row, rowIndex) => (
                   <tr
-                    key={rowIndex}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    key={rowKey ? String(rowKey(row)) : rowIndex}
+                    className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${selectable && selected.has(rowKey!(row)) ? 'bg-blue-50/60 dark:bg-blue-900/10' : ''}`}
                   >
+                    {selectable && (
+                      <td className="px-4 py-4 w-10">
+                        <input type="checkbox" aria-label={t('table.selectRow')} checked={selected.has(rowKey!(row))} onChange={() => toggleOne(rowKey!(row))} className="rounded border-gray-300 dark:border-gray-600" />
+                      </td>
+                    )}
                     {columns.map((column) => (
                       <td
                         key={String(column.key)}
@@ -231,8 +282,9 @@ export function DataTable<T extends Record<string, any>>({
                                     variantStyles[action.variant || 'secondary']
                                   }`}
                                   title={action.label}
+                                  aria-label={action.label}
                                 >
-                                  <Icon className="w-4 h-4" />
+                                  <Icon className="w-4 h-4" aria-hidden />
                                 </button>
                               );
                             })}
@@ -250,7 +302,7 @@ export function DataTable<T extends Record<string, any>>({
       {pagination && data.length > 0 && (
         <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-700 dark:text-gray-300">Rows per page:</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('table.rowsPerPage')}</span>
             <select
               value={pagination.pageSize}
               onChange={(e) => pagination.onPageSizeChange(Number(e.target.value))}
@@ -274,14 +326,14 @@ export function DataTable<T extends Record<string, any>>({
                 disabled={pagination.currentPage === 1}
                 className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
-                Previous
+                {t('common.previous')}
               </button>
               <button
                 onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
                 disabled={pagination.currentPage === pagination.totalPages}
                 className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
-                Next
+                {t('common.next')}
               </button>
             </div>
           </div>

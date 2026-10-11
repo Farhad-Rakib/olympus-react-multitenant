@@ -62,7 +62,7 @@ export class AuthService extends BaseRepository implements IAuthService {
   }
 
   async changePassword(dto: ChangePasswordRequestDto): Promise<void> {
-    const response = await this.post<ApiResponse<any>>('/change-password', dto);
+    const response = await this.post<ApiResponse<unknown>>('/change-password', dto);
     if (!response.success) {
       throw new Error(response.message || 'Failed to change password');
     }

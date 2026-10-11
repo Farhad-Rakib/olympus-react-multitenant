@@ -6,6 +6,7 @@ import { menuApi } from '../../../core/api/services/menu.api';
 import { AppConfig } from '../../../core/config/app.config';
 import { queryClient } from '../../../app/providers/AppProviders';
 import { useSiteSettingsStore } from '../../../core/stores/site-settings.store';
+import { getApiErrorMessage } from '../../../core/utils/error';
 
 interface TokenPayload {
   sub?: string;
@@ -14,8 +15,27 @@ interface TokenPayload {
   role?: string;
   permissions?: string[];
   tenant_id?: string;
-  [key: string]: any;
+  platform_admin?: string;
+  // Present only on an impersonation token: id of the support user acting as this one.
+  act_by?: string;
+  [key: string]: unknown;
 }
+
+export interface ImpersonationSession {
+  // The real session, restored on exit or when the short-lived token expires.
+  original: { accessToken: string | null; refreshToken: string | null; tokenPayload: TokenPayload | null };
+  userId: number;
+  fullName: string;
+  email: string;
+  expiresAtUtc: string;
+}
+
+// Claims are attacker-influenced data from a decoded token, so the shape is checked rather than
+// asserted. The backend has emitted both "permissions" and "permission" over time; both are read.
+const readPermissions = (payload: TokenPayload): string[] => {
+  const raw = payload.permissions ?? payload.permission;
+  return Array.isArray(raw) ? raw.filter((p): p is string => typeof p === 'string') : [];
+};
 
 interface AuthState {
   accessToken: string | null;
@@ -25,12 +45,21 @@ interface AuthState {
   error: string | null;
   tokenPayload: TokenPayload | null;
   tenantSlug: string | null;
+  // Platform admins only: the tenant they are currently administering. Sent as X-Tenant-Id in
+  // place of their home tenant; the backend ignores that header for anyone else, so this can
+  // never widen a regular user's access. null = act as yourself.
+  actingTenantSlug: string | null;
+  impersonation: ImpersonationSession | null;
   login: (dto: LoginRequestDto) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
   hasAllPermissions: (permissions: string[]) => boolean;
+  isPlatformAdmin: () => boolean;
+  setActingTenant: (slug: string | null) => void;
+  startImpersonation: (result: { accessToken: string; accessTokenExpiresAtUtc: string; userId: number; fullName: string; email: string }) => void;
+  endImpersonation: () => void;
 }
 
 function decodeJwtPayload(token: string): TokenPayload | null {
@@ -54,6 +83,8 @@ export const useAuthStore = create<AuthState>()(
       error: null,
       tokenPayload: null,
       tenantSlug: null,
+      actingTenantSlug: null,
+      impersonation: null,
 
       login: async (dto: LoginRequestDto) => {
         set({ isLoading: true, error: null, tenantSlug: dto.tenantSlug });
@@ -76,8 +107,8 @@ export const useAuthStore = create<AuthState>()(
             queryKey: ['menu'],
             queryFn: () => menuApi.getMenuItems(),
           });
-        } catch (error: any) {
-          const message = error?.response?.data?.message || error?.message || 'Login failed';
+        } catch (error: unknown) {
+          const message = getApiErrorMessage(error, 'Login failed');
           set({
             error: message,
             isLoading: false,
@@ -104,6 +135,8 @@ export const useAuthStore = create<AuthState>()(
             error: null,
             tokenPayload: null,
             tenantSlug: null,
+            actingTenantSlug: null,
+            impersonation: null,
           });
 
           const storage = AppConfig.auth.storageType === 'localStorage' ? localStorage : sessionStorage;
@@ -113,28 +146,77 @@ export const useAuthStore = create<AuthState>()(
 
       clearError: () => set({ error: null }),
 
+      // Mirrors the server's PermissionAuthorizationHandler: a platform super admin (the
+      // platform_admin claim, a user flag rather than a role) passes every permission check, so
+      // their token carries no permissions array. Without this shortcut the UI would hide
+      // controls from exactly the user the server lets use them.
       hasPermission: (permission: string): boolean => {
         const { tokenPayload } = get();
         if (!tokenPayload) return false;
-        const perms = tokenPayload.permissions || tokenPayload.permission || [];
-        if (Array.isArray(perms)) return perms.includes(permission);
-        return false;
+        if (tokenPayload.platform_admin === 'true') return true;
+        return readPermissions(tokenPayload).includes(permission);
       },
 
       hasAnyPermission: (permissions: string[]): boolean => {
         const { tokenPayload } = get();
         if (!tokenPayload) return false;
-        const perms: string[] = tokenPayload.permissions || tokenPayload.permission || [];
-        if (!Array.isArray(perms)) return false;
+        if (tokenPayload.platform_admin === 'true') return true;
+        const perms = readPermissions(tokenPayload);
         return permissions.some(p => perms.includes(p));
       },
 
       hasAllPermissions: (permissions: string[]): boolean => {
         const { tokenPayload } = get();
         if (!tokenPayload) return false;
-        const perms: string[] = tokenPayload.permissions || tokenPayload.permission || [];
-        if (!Array.isArray(perms)) return false;
+        if (tokenPayload.platform_admin === 'true') return true;
+        const perms = readPermissions(tokenPayload);
         return permissions.every(p => perms.includes(p));
+      },
+
+      // Mirrors the claim TenantResolutionMiddleware checks. Purely cosmetic on the client (shows
+      // the switcher); the server re-checks the claim on every overridden request.
+      isPlatformAdmin: (): boolean => get().tokenPayload?.platform_admin === 'true',
+
+      // Swap the session to the impersonation token. No refresh token: when it expires the
+      // interceptor's auth-error path restores the original session instead of logging out.
+      startImpersonation: (result) => {
+        const { accessToken, refreshToken, tokenPayload, impersonation } = get();
+        if (impersonation) return; // no chaining client-side either
+        set({
+          impersonation: {
+            original: { accessToken, refreshToken, tokenPayload },
+            userId: result.userId,
+            fullName: result.fullName,
+            email: result.email,
+            expiresAtUtc: result.accessTokenExpiresAtUtc,
+          },
+          accessToken: result.accessToken,
+          refreshToken: null,
+          tokenPayload: decodeJwtPayload(result.accessToken),
+        });
+        queryClient.clear();
+      },
+
+      endImpersonation: () => {
+        const { impersonation } = get();
+        if (!impersonation) return;
+        set({
+          impersonation: null,
+          accessToken: impersonation.original.accessToken,
+          refreshToken: impersonation.original.refreshToken,
+          tokenPayload: impersonation.original.tokenPayload,
+          isAuthenticated: !!impersonation.original.accessToken,
+        });
+        queryClient.clear();
+      },
+
+      setActingTenant: (slug: string | null) => {
+        const next = slug && slug !== get().tenantSlug ? slug : null;
+        if (next === get().actingTenantSlug) return;
+        set({ actingTenantSlug: next });
+        // Everything cached so far belongs to the previous tenant: menus, users, settings, the
+        // licence banner. Drop it all rather than trying to enumerate the tenant-scoped keys.
+        queryClient.clear();
       },
     }),
     {
@@ -145,6 +227,8 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         tokenPayload: state.tokenPayload,
         tenantSlug: state.tenantSlug,
+        actingTenantSlug: state.actingTenantSlug,
+        impersonation: state.impersonation,
       }),
     }
   )

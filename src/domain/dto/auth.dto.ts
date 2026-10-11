@@ -6,6 +6,8 @@ export interface LoginRequestDto {
 
 export interface LoginConfigDto {
   requiresTenantSlug: boolean;
+  // Null on the bare platform host, where the request resolves to no tenant.
+  branding: TenantBrandingDto | null;
 }
 
 export interface ApiResponse<T> {
@@ -28,6 +30,9 @@ export interface TenantBrandingDto {
   title: string | null;
   logoUrl: string | null;
   tagline: string | null;
+  faviconUrl: string | null;
+  brandColor: string | null;
+  supportEmail: string | null;
 }
 
 export interface LoginResultDto {

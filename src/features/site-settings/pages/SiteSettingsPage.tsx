@@ -6,6 +6,7 @@ import { toast } from '../../../components/ui/Toast/toast.store';
 import { useSiteSettingsStore } from '../../../core/stores/site-settings.store';
 import { ConfirmDialog } from '../../../components/ui/Dialog/ConfirmDialog';
 import { Modal } from '../../../components/ui/Modal/Modal';
+import { getApiErrorMessage } from '../../../core/utils/error';
 
 // Site settings are a free-form key/value store, so secrets (Smtp.Password today) sit in the same
 // table as cosmetic values like Site.Title. Keys are matched by name rather than maintaining an
@@ -44,7 +45,7 @@ export const SiteSettingsPage: React.FC = () => {
       setShowAddModal(false);
       setFormData({ key: '', value: '', description: '' });
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to create setting'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to create setting')),
   });
 
   const updateMutation = useMutation({
@@ -56,7 +57,7 @@ export const SiteSettingsPage: React.FC = () => {
       setEditItem(null);
       setFormData({ key: '', value: '', description: '' });
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to update setting'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to update setting')),
   });
 
   const deleteMutation = useMutation({
@@ -67,7 +68,7 @@ export const SiteSettingsPage: React.FC = () => {
       toast.success('Setting deleted');
       setDeleteId(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to delete setting'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, 'Failed to delete setting')),
   });
 
   const openEditModal = (setting: SiteSettingDto) => {
@@ -164,8 +165,8 @@ export const SiteSettingsPage: React.FC = () => {
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Setting" size="md">
         <div className="space-y-4">
           <div>
-            <label className={labelCls}>Key</label>
-            <input
+            <label htmlFor="key" className={labelCls}>Key</label>
+            <input id="key"
               value={formData.key}
               onChange={(e) => setFormData(prev => ({ ...prev, key: e.target.value }))}
               className={inputCls}
@@ -173,8 +174,8 @@ export const SiteSettingsPage: React.FC = () => {
             />
           </div>
           <div>
-            <label className={labelCls}>Value</label>
-            <input
+            <label htmlFor="value" className={labelCls}>Value</label>
+            <input id="value"
               type={isSecretKey(formData.key) ? 'password' : 'text'}
               autoComplete="off"
               value={formData.value}
@@ -184,8 +185,8 @@ export const SiteSettingsPage: React.FC = () => {
             />
           </div>
           <div>
-            <label className={labelCls}>Description</label>
-            <textarea
+            <label htmlFor="description" className={labelCls}>Description</label>
+            <textarea id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               className={`${inputCls} resize-none`}
@@ -216,8 +217,8 @@ export const SiteSettingsPage: React.FC = () => {
         {editItem && (
           <div className="space-y-4">
             <div>
-              <label className={labelCls}>Key</label>
-              <input
+              <label htmlFor="key-2" className={labelCls}>Key</label>
+              <input id="key-2"
                 value={formData.key}
                 onChange={(e) => setFormData(prev => ({ ...prev, key: e.target.value }))}
                 className={inputCls}
@@ -225,8 +226,8 @@ export const SiteSettingsPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className={labelCls}>Value</label>
-              <input
+              <label htmlFor="value-2" className={labelCls}>Value</label>
+              <input id="value-2"
                 type={isSecretKey(formData.key) ? 'password' : 'text'}
                 autoComplete="off"
                 value={formData.value}
@@ -236,8 +237,8 @@ export const SiteSettingsPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className={labelCls}>Description</label>
-              <textarea
+              <label htmlFor="description-2" className={labelCls}>Description</label>
+              <textarea id="description-2"
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 className={`${inputCls} resize-none`}

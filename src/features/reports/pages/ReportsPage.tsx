@@ -1,4 +1,6 @@
+import type { TFunction } from 'i18next';
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area,
@@ -47,54 +49,55 @@ const topProducts = [
   { name: 'Mechanical Keyboard', sales: 543, revenue: '$43,440', growth: '+6.7%' },
 ];
 
-const summaryCards = [
-  { label: 'Total Revenue', value: '$691,000', change: '+14.2%', icon: DollarSign, color: 'bg-blue-500' },
-  { label: 'Total Orders', value: '8,456', change: '+9.1%', icon: ShoppingCart, color: 'bg-emerald-500' },
-  { label: 'New Customers', value: '2,341', change: '+22.5%', icon: Users, color: 'bg-amber-500' },
-  { label: 'Growth Rate', value: '14.2%', change: '+3.8%', icon: TrendingUp, color: 'bg-rose-500' },
+const summaryCards = (t: TFunction) => [
+  { label: t('reports.totalRevenue'), value: '$691,000', change: '+14.2%', icon: DollarSign, color: 'bg-blue-500' },
+  { label: t('reports.totalOrders'), value: '8,456', change: '+9.1%', icon: ShoppingCart, color: 'bg-emerald-500' },
+  { label: t('reports.newCustomers'), value: '2,341', change: '+22.5%', icon: Users, color: 'bg-amber-500' },
+  { label: t('reports.growthRate'), value: '14.2%', change: '+3.8%', icon: TrendingUp, color: 'bg-rose-500' },
 ];
 
-const reportTypeOptions: AutocompleteOption[] = [
-  { label: 'Sales Report', value: 'sales' },
-  { label: 'Revenue Report', value: 'revenue' },
-  { label: 'Expense Report', value: 'expenses' },
-  { label: 'Profit & Loss', value: 'pnl' },
-  { label: 'Traffic Report', value: 'traffic' },
-  { label: 'Customer Report', value: 'customers' },
-  { label: 'Product Performance', value: 'products' },
-  { label: 'Inventory Report', value: 'inventory' },
+const reportTypeOptions = (t: TFunction): AutocompleteOption[] => [
+  { label: t('reports.salesReport'), value: 'sales' },
+  { label: t('reports.revenueReport'), value: 'revenue' },
+  { label: t('reports.expenseReport'), value: 'expenses' },
+  { label: t('reports.profitLoss'), value: 'pnl' },
+  { label: t('reports.trafficReport'), value: 'traffic' },
+  { label: t('reports.customerReport'), value: 'customers' },
+  { label: t('reports.productPerformance'), value: 'products' },
+  { label: t('reports.inventoryReport'), value: 'inventory' },
 ];
 
-const categoryOptions: AutocompleteOption[] = [
-  { label: 'All Categories', value: 'all' },
-  { label: 'Electronics', value: 'electronics' },
-  { label: 'Clothing', value: 'clothing' },
-  { label: 'Food & Drink', value: 'food' },
-  { label: 'Home & Garden', value: 'home' },
-  { label: 'Sports & Outdoors', value: 'sports' },
-  { label: 'Books & Media', value: 'books' },
-  { label: 'Health & Beauty', value: 'health' },
+const categoryOptions = (t: TFunction): AutocompleteOption[] => [
+  { label: t('reports.allCategories'), value: 'all' },
+  { label: t('reports.electronics'), value: 'electronics' },
+  { label: t('reports.clothing'), value: 'clothing' },
+  { label: t('reports.foodDrink'), value: 'food' },
+  { label: t('reports.homeGarden'), value: 'home' },
+  { label: t('reports.sportsOutdoors'), value: 'sports' },
+  { label: t('reports.booksMedia'), value: 'books' },
+  { label: t('reports.healthBeauty'), value: 'health' },
 ];
 
-const regionOptions: AutocompleteOption[] = [
-  { label: 'All Regions', value: 'all' },
-  { label: 'North America', value: 'na' },
-  { label: 'Europe', value: 'eu' },
-  { label: 'Asia Pacific', value: 'apac' },
-  { label: 'Latin America', value: 'latam' },
-  { label: 'Middle East & Africa', value: 'mea' },
+const regionOptions = (t: TFunction): AutocompleteOption[] => [
+  { label: t('reports.allRegions'), value: 'all' },
+  { label: t('reports.northAmerica'), value: 'na' },
+  { label: t('reports.europe'), value: 'eu' },
+  { label: t('reports.asiaPacific'), value: 'apac' },
+  { label: t('reports.latinAmerica'), value: 'latam' },
+  { label: t('reports.middleEastAfrica'), value: 'mea' },
 ];
 
-const statusOptions: AutocompleteOption[] = [
-  { label: 'All Status', value: 'all' },
-  { label: 'Completed', value: 'completed' },
-  { label: 'Pending', value: 'pending' },
-  { label: 'Processing', value: 'processing' },
-  { label: 'Cancelled', value: 'cancelled' },
-  { label: 'Refunded', value: 'refunded' },
+const statusOptions = (t: TFunction): AutocompleteOption[] => [
+  { label: t('reports.allStatus'), value: 'all' },
+  { label: t('reports.completed'), value: 'completed' },
+  { label: t('reports.pending'), value: 'pending' },
+  { label: t('reports.processing'), value: 'processing' },
+  { label: t('reports.cancelled'), value: 'cancelled' },
+  { label: t('reports.refunded'), value: 'refunded' },
 ];
 
 export const ReportsPage: React.FC = () => {
+  const { t } = useTranslation();
   const [period, setPeriod] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -124,8 +127,8 @@ export const ReportsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Analytics and business intelligence</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('reports.reports')}</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{t('reports.analyticsAndBusinessIntelligence')}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
@@ -152,7 +155,7 @@ export const ReportsPage: React.FC = () => {
             }`}
           >
             <Filter className="w-4 h-4" />
-            Filters
+            {t('reports.filters')}
             {hasActiveFilters && (
               <span className="w-2 h-2 rounded-full bg-blue-500" />
             )}
@@ -169,14 +172,14 @@ export const ReportsPage: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-gray-400" />
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Search & Filter</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t('reports.searchFilter')}</h3>
             </div>
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
                 className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
               >
-                Clear all filters
+                {t('reports.clearAllFilters')}
               </button>
             )}
           </div>
@@ -184,8 +187,8 @@ export const ReportsPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Date From */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Date From</label>
-              <input
+              <label htmlFor="date-from" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">{t('reports.dateFrom')}</label>
+              <input id="date-from"
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
@@ -195,8 +198,8 @@ export const ReportsPage: React.FC = () => {
 
             {/* Date To */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Date To</label>
-              <input
+              <label htmlFor="date-to" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">{t('reports.dateTo')}</label>
+              <input id="date-to"
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
@@ -206,45 +209,45 @@ export const ReportsPage: React.FC = () => {
 
             {/* Report Type */}
             <Autocomplete
-              options={reportTypeOptions}
+              options={reportTypeOptions(t)}
               value={reportType}
               onChange={setReportType}
-              placeholder="Select report type..."
-              label="Report Type"
+              placeholder={t('reports.selectReportType')}
+              label={t('reports.reportType')}
             />
 
             {/* Category */}
             <Autocomplete
-              options={categoryOptions}
+              options={categoryOptions(t)}
               value={category}
               onChange={setCategory}
-              placeholder="Select category..."
-              label="Category"
+              placeholder={t('reports.selectCategory')}
+              label={t('reports.category')}
             />
 
             {/* Region */}
             <Autocomplete
-              options={regionOptions}
+              options={regionOptions(t)}
               value={region}
               onChange={setRegion}
-              placeholder="Select region..."
-              label="Region"
+              placeholder={t('reports.selectRegion')}
+              label={t('reports.region')}
             />
 
             {/* Status */}
             <Autocomplete
-              options={statusOptions}
+              options={statusOptions(t)}
               value={status}
               onChange={setStatus}
-              placeholder="Select status..."
-              label="Status"
+              placeholder={t('reports.selectStatus')}
+              label={t('common.status')}
             />
           </div>
 
           <div className="flex justify-end mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
             <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
               <Filter className="w-4 h-4" />
-              Apply Filters
+              {t('reports.applyFilters')}
             </button>
           </div>
         </div>
@@ -252,7 +255,7 @@ export const ReportsPage: React.FC = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {summaryCards.map((card) => {
+        {summaryCards(t).map((card) => {
           const Icon = card.icon;
           const isPositive = card.change.startsWith('+');
           return (
@@ -276,7 +279,7 @@ export const ReportsPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Revenue & Expenses</h3>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">{t('reports.revenueExpenses')}</h3>
             <div className="flex items-center gap-1 text-xs text-gray-400">
               <Calendar className="w-3.5 h-3.5" /> {dateFrom && dateTo ? `${dateFrom} - ${dateTo}` : '2024'}
             </div>
@@ -298,7 +301,7 @@ export const ReportsPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Sales by Category</h3>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">{t('reports.salesByCategory')}</h3>
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
               <Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={3} dataKey="value">
@@ -325,7 +328,7 @@ export const ReportsPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Weekly Traffic</h3>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">{t('reports.weeklyTraffic')}</h3>
           <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={weeklyTraffic}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
@@ -340,15 +343,15 @@ export const ReportsPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Top Products</h3>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">{t('reports.topProducts')}</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="pb-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product</th>
-                  <th className="pb-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Sales</th>
-                  <th className="pb-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Revenue</th>
-                  <th className="pb-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Growth</th>
+                  <th className="pb-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{t('reports.product')}</th>
+                  <th className="pb-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{t('reports.sales')}</th>
+                  <th className="pb-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{t('reports.revenue')}</th>
+                  <th className="pb-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{t('reports.growth')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
@@ -371,7 +374,7 @@ export const ReportsPage: React.FC = () => {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Profit Trend</h3>
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">{t('reports.profitTrend')}</h3>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={monthlyRevenue}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />

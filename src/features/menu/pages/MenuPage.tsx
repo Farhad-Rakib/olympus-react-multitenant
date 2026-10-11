@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Trash2 } from 'lucide-react';
 import { DataTable, Column, RowAction } from '../../../components/table/DataTable';
@@ -8,6 +9,8 @@ import { DynamicForm, FormField } from '../../../components/form/DynamicForm';
 import { toast } from '../../../components/ui/Toast/toast.store';
 import { BaseRepository } from '../../../core/api/base.repository';
 import { ApiResponse } from '../../../domain/dto/auth.dto';
+import { getApiErrorMessage } from '../../../core/utils/error';
+import { asText, asOptionalText, asOptionalNumber } from '../../../core/utils/form';
 
 interface MenuDto {
   id: number;
@@ -40,11 +43,11 @@ class MenuCrudApi extends BaseRepository {
     return res.data;
   }
   async update(id: number, dto: CreateMenuDto): Promise<void> {
-    const res = await this.put<ApiResponse<any>>(`/${id}`, dto);
+    const res = await this.put<ApiResponse<unknown>>(`/${id}`, dto);
     if (!res.success) throw new Error(res.message);
   }
   async remove(id: number): Promise<void> {
-    await this.delete<any>(`/${id}`);
+    await this.delete<void>(`/${id}`);
   }
 }
 
@@ -69,6 +72,7 @@ function flattenMenuItems(items: MenuDto[]): MenuDto[] {
 }
 
 export const MenuPage: React.FC = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editItem, setEditItem] = useState<MenuDto | null>(null);
@@ -93,10 +97,10 @@ export const MenuPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menu-crud'] });
       queryClient.invalidateQueries({ queryKey: ['menu'] });
-      toast.success('Menu item created successfully');
+      toast.success(t('menu.menuItemCreatedSuccessfully'));
       setShowAddModal(false);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to create menu item'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('menu.failedToCreateMenuItem'))),
   });
 
   const updateMutation = useMutation({
@@ -104,10 +108,10 @@ export const MenuPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menu-crud'] });
       queryClient.invalidateQueries({ queryKey: ['menu'] });
-      toast.success('Menu item updated successfully');
+      toast.success(t('menu.menuItemUpdatedSuccessfully'));
       setEditItem(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to update menu item'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('menu.failedToUpdateMenuItem'))),
   });
 
   const deleteMutation = useMutation({
@@ -115,77 +119,77 @@ export const MenuPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menu-crud'] });
       queryClient.invalidateQueries({ queryKey: ['menu'] });
-      toast.success('Menu item deleted successfully');
+      toast.success(t('menu.menuItemDeletedSuccessfully'));
       setDeleteId(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to delete menu item'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('menu.failedToDeleteMenuItem'))),
   });
 
   const columns: Column<MenuDto>[] = [
     { key: 'id', label: 'ID', width: '60px' },
-    { key: 'title', label: 'Title', sortable: true },
+    { key: 'title', label: t('menu.title'), sortable: true },
     { key: 'url', label: 'URL', sortable: true, render: (val) => val ? (
-      <code className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">{val}</code>
+      <code className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">{String(val)}</code>
     ) : <span className="text-xs text-gray-400">-</span> },
-    { key: 'icon', label: 'Icon', render: (val) => (
-      <span className="text-xs text-gray-500 dark:text-gray-400">{val || '-'}</span>
+    { key: 'icon', label: t('menu.icon'), render: (val) => (
+      <span className="text-xs text-gray-500 dark:text-gray-400">{val ? String(val) : '-'}</span>
     )},
-    { key: 'requiredPermission', label: 'Permission', render: (val) => val ? (
-      <span className="px-2 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">{val}</span>
-    ) : <span className="text-xs text-gray-400">Public</span>},
-    { key: 'parentMenuId', label: 'Parent', width: '80px', render: (val) => {
-      if (!val) return <span className="text-xs text-gray-400">Root</span>;
+    { key: 'requiredPermission', label: t('menu.permission'), render: (val) => val ? (
+      <span className="px-2 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">{String(val)}</span>
+    ) : <span className="text-xs text-gray-400">{t('menu.public')}</span>},
+    { key: 'parentMenuId', label: t('menu.parent'), width: '80px', render: (val) => {
+      if (!val) return <span className="text-xs text-gray-400">{t('menu.root')}</span>;
       const parent = uniqueItems.find(m => m.id === val);
       return <span className="text-xs text-gray-500">{parent?.title || `#${val}`}</span>;
     }},
   ];
 
   const rowActions: RowAction<MenuDto>[] = [
-    { icon: Pencil, label: 'Edit', onClick: (m) => setEditItem(m), variant: 'primary' },
-    { icon: Trash2, label: 'Delete', onClick: (m) => setDeleteId(m.id), variant: 'danger' },
+    { icon: Pencil, label: t('common.edit'), onClick: (m) => setEditItem(m), variant: 'primary' },
+    { icon: Trash2, label: t('common.delete'), onClick: (m) => setDeleteId(m.id), variant: 'danger' },
   ];
 
   const parentOptions = [
-    { label: 'None (Root)', value: 0 },
+    { label: t('menu.noneRoot'), value: 0 },
     ...uniqueItems.filter(m => !m.parentMenuId).map((m) => ({ label: m.title, value: m.id })),
   ];
 
   const createFields: FormField[] = [
-    { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'e.g. Dashboard' },
+    { name: 'title', label: t('menu.title'), type: 'text', required: true, placeholder: 'e.g. Dashboard' },
     { name: 'url', label: 'URL', type: 'text', placeholder: 'e.g. /dashboard (leave blank for parent-only)' },
-    { name: 'icon', label: 'Icon', type: 'text', placeholder: 'e.g. dashboard, users, settings' },
-    { name: 'requiredPermission', label: 'Required Permission', type: 'text', placeholder: 'e.g. users.read (blank for public)' },
-    { name: 'parentMenuId', label: 'Parent Menu', type: 'select', options: parentOptions, defaultValue: 0 },
+    { name: 'icon', label: t('menu.icon'), type: 'text', placeholder: 'e.g. dashboard, users, settings' },
+    { name: 'requiredPermission', label: t('menu.requiredPermission'), type: 'text', placeholder: 'e.g. users.read (blank for public)' },
+    { name: 'parentMenuId', label: t('menu.parentMenu'), type: 'select', options: parentOptions, defaultValue: 0 },
   ];
 
   const editFields: FormField[] = [
-    { name: 'title', label: 'Title', type: 'text', required: true, defaultValue: editItem?.title || '' },
+    { name: 'title', label: t('menu.title'), type: 'text', required: true, defaultValue: editItem?.title || '' },
     { name: 'url', label: 'URL', type: 'text', defaultValue: editItem?.url || '' },
-    { name: 'icon', label: 'Icon', type: 'text', defaultValue: editItem?.icon || '' },
-    { name: 'requiredPermission', label: 'Required Permission', type: 'text', defaultValue: editItem?.requiredPermission || '' },
-    { name: 'parentMenuId', label: 'Parent Menu', type: 'select', options: parentOptions, defaultValue: editItem?.parentMenuId || 0 },
+    { name: 'icon', label: t('menu.icon'), type: 'text', defaultValue: editItem?.icon || '' },
+    { name: 'requiredPermission', label: t('menu.requiredPermission'), type: 'text', defaultValue: editItem?.requiredPermission || '' },
+    { name: 'parentMenuId', label: t('menu.parentMenu'), type: 'select', options: parentOptions, defaultValue: editItem?.parentMenuId || 0 },
   ];
 
-  const handleCreate = (data: Record<string, any>) => {
+  const handleCreate = (data: Record<string, unknown>) => {
     createMutation.mutate({
-      title: data.title,
-      url: data.url || null,
-      icon: data.icon || null,
-      requiredPermission: data.requiredPermission || null,
-      parentMenuId: data.parentMenuId ? Number(data.parentMenuId) : null,
+      title: asText(data.title),
+      url: asOptionalText(data.url),
+      icon: asOptionalText(data.icon),
+      requiredPermission: asOptionalText(data.requiredPermission),
+      parentMenuId: asOptionalNumber(data.parentMenuId),
     });
   };
 
-  const handleUpdate = (data: Record<string, any>) => {
+  const handleUpdate = (data: Record<string, unknown>) => {
     if (!editItem) return;
     updateMutation.mutate({
       id: editItem.id,
       dto: {
-        title: data.title,
-        url: data.url || null,
-        icon: data.icon || null,
-        requiredPermission: data.requiredPermission || null,
-        parentMenuId: data.parentMenuId ? Number(data.parentMenuId) : null,
+        title: asText(data.title),
+        url: asOptionalText(data.url),
+        icon: asOptionalText(data.icon),
+        requiredPermission: asOptionalText(data.requiredPermission),
+        parentMenuId: asOptionalNumber(data.parentMenuId),
       },
     });
   };
@@ -193,8 +197,8 @@ export const MenuPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Menu Management</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Manage navigation menu items</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('menu.menuManagement')}</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('menu.manageNavigationMenuItems')}</p>
       </div>
 
       <DataTable
@@ -203,30 +207,30 @@ export const MenuPage: React.FC = () => {
         isLoading={isLoading}
         error={error?.message}
         searchable
-        searchPlaceholder="Search menu items..."
-        emptyState={{ title: 'No menu items found', description: 'Create a new menu item to get started' }}
-        actions={{ add: { label: 'Add Menu Item', onClick: () => setShowAddModal(true) } }}
+        searchPlaceholder={t('menu.searchMenuItems')}
+        emptyState={{ title: t('menu.noMenuItemsFound'), description: t('menu.createANewMenuItemToGetStarted') }}
+        actions={{ add: { label: t('menu.addMenuItem'), onClick: () => setShowAddModal(true) } }}
         rowActions={rowActions}
         onRetry={() => refetch()}
       />
 
-      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add Menu Item" size="md">
+      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title={t('menu.addMenuItem')} size="md">
         <DynamicForm
           fields={createFields}
           onSubmit={handleCreate}
-          submitLabel="Create"
+          submitLabel={t('common.create')}
           onCancel={() => setShowAddModal(false)}
           isLoading={createMutation.isPending}
         />
       </Modal>
 
-      <Modal isOpen={editItem !== null} onClose={() => setEditItem(null)} title="Edit Menu Item" size="md">
+      <Modal isOpen={editItem !== null} onClose={() => setEditItem(null)} title={t('menu.editMenuItem')} size="md">
         {editItem && (
           <DynamicForm
             key={editItem.id}
             fields={editFields}
             onSubmit={handleUpdate}
-            submitLabel="Update"
+            submitLabel={t('common.update')}
             onCancel={() => setEditItem(null)}
             isLoading={updateMutation.isPending}
           />
@@ -237,9 +241,9 @@ export const MenuPage: React.FC = () => {
         isOpen={deleteId !== null}
         onClose={() => setDeleteId(null)}
         onConfirm={() => deleteId !== null && deleteMutation.mutate(deleteId)}
-        title="Delete Menu Item"
-        message="Are you sure you want to delete this menu item? This action cannot be undone."
-        confirmText="Delete"
+        title={t('menu.deleteMenuItem')}
+        message={t('menu.areYouSureYouWantToDeleteThisMenuItemThi')}
+        confirmText={t('common.delete')}
         variant="danger"
       />
     </div>

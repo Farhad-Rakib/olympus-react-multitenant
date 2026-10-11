@@ -1,23 +1,26 @@
+import type { TFunction } from 'i18next';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Settings, Shield, Bell } from 'lucide-react';
 import { GeneralSettingsPage } from './GeneralSettingsPage';
 import { SecuritySettingsPage } from './SecuritySettingsPage';
 import { NotificationSettingsPage } from './NotificationSettingsPage';
 
-const tabs = [
-  { id: 'general', label: 'General', icon: Settings },
-  { id: 'security', label: 'Security', icon: Shield },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
+const tabs = (t: TFunction) => [
+  { id: 'general', label: t('settings.general'), icon: Settings },
+  { id: 'security', label: t('settings.security'), icon: Shield },
+  { id: 'notifications', label: t('settings.notifications'), icon: Bell },
 ];
 
 export const SettingsLayout: React.FC<{ initialTab?: string }> = ({ initialTab = 'general' }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(initialTab);
 
   return (
     <div className="flex flex-col lg:flex-row gap-6">
       <div className="lg:w-56 shrink-0">
         <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0">
-          {tabs.map((tab) => {
+          {tabs(t).map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
             return (

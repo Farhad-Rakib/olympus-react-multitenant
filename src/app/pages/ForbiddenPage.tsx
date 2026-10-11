@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Home, ArrowLeft, ShieldX } from 'lucide-react';
 
 export const ForbiddenPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -14,9 +16,9 @@ export const ForbiddenPage: React.FC = () => {
         </div>
 
         <h1 className="text-6xl font-bold text-red-600 dark:text-red-400 mb-4">403</h1>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Access Denied</h2>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{t('errors.accessDenied')}</h2>
         <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md">
-          You do not have permission to access this page. Please contact your administrator if you
+          {t('errors.youDoNotHavePermissionToAccessThisPagePl')}
           believe this is an error.
         </p>
 
@@ -26,14 +28,14 @@ export const ForbiddenPage: React.FC = () => {
             className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Go Back
+            {t('errors.goBack')}
           </button>
           <button
             onClick={() => navigate('/dashboard')}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Home className="w-4 h-4" />
-            Go to Dashboard
+            {t('errors.goToDashboard')}
           </button>
         </div>
       </div>

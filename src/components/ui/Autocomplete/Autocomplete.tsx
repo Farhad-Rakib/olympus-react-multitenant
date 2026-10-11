@@ -160,6 +160,7 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
       {isOpen && (
         <ul
           ref={listRef}
+          role="listbox"
           className="absolute z-50 w-full mt-1 max-h-60 overflow-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1"
         >
           {loading ? (
@@ -170,7 +171,10 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
             filtered.map((option, index) => (
               <li
                 key={option.value}
+                role="option"
+                aria-selected={option.value === value}
                 onClick={() => handleSelect(option)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(option); } }}
                 className={`px-3 py-2 text-sm cursor-pointer transition-colors ${
                   option.value === value
                     ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium'

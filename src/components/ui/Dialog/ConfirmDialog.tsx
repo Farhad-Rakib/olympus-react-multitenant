@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { useOverlay, portal } from '../Overlay/useOverlay';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   cancelText = 'Cancel',
   variant = 'info',
 }) => {
+  useOverlay(isOpen, onClose);
   if (!isOpen) return null;
 
   const handleConfirm = () => {
@@ -34,8 +36,13 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+  return portal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      role="alertdialog"
+      aria-modal="true"
+      aria-label={title}
+    >
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
@@ -64,6 +71,6 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
   );
 };

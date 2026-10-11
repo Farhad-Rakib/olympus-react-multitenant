@@ -26,7 +26,7 @@ class TenantRegistrationApi extends BaseRepository {
   }
 
   async submit(dto: SubmitTenantRegistrationRequestDto): Promise<void> {
-    const res = await this.post<ApiResponse<any>>('/submit', dto);
+    const res = await this.post<ApiResponse<unknown>>('/submit', dto);
     if (!res.success) throw new Error(res.message);
   }
 }

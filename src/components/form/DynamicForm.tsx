@@ -10,7 +10,7 @@ export interface FormField {
   label: string;
   type: FieldType;
   placeholder?: string;
-  defaultValue?: any;
+  defaultValue?: unknown;
   required?: boolean;
   disabled?: boolean;
   options?: { label: string; value: string | number }[];
@@ -20,7 +20,7 @@ export interface FormField {
 
 interface DynamicFormProps {
   fields: FormField[];
-  onSubmit: (data: any) => void | Promise<void>;
+  onSubmit: (data: Record<string, unknown>) => void | Promise<void>;
   submitLabel?: string;
   cancelLabel?: string;
   onCancel?: () => void;
@@ -65,7 +65,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     }, {})
   );
 
-  const defaultValues = fields.reduce<Record<string, any>>((acc, field) => {
+  const defaultValues = fields.reduce<Record<string, unknown>>((acc, field) => {
     return { ...acc, [field.name]: field.defaultValue || '' };
   }, {});
 
@@ -73,7 +73,10 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<Record<string, any>>({
+  } = useForm<Record<string, unknown>>({
+    // zodResolver cannot infer a schema assembled at runtime; the resolver contract is still
+    // enforced by useForm's own generic above. Library friction, not a gap in our typing.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues,
   });
@@ -107,7 +110,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                 return (
                   <textarea
                     id={field.name}
-                    value={value}
+                    value={value == null ? '' : String(value)}
                     onChange={onChange}
                     onBlur={onBlur}
                     placeholder={field.placeholder}
@@ -121,7 +124,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                 return (
                   <select
                     id={field.name}
-                    value={value}
+                    value={value == null ? '' : String(value)}
                     onChange={onChange}
                     onBlur={onBlur}
                     disabled={field.disabled || isLoading}
@@ -142,7 +145,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                     <input
                       type="checkbox"
                       id={field.name}
-                      checked={value}
+                      checked={Boolean(value)}
                       onChange={(e) => onChange(e.target.checked)}
                       onBlur={onBlur}
                       disabled={field.disabled || isLoading}
@@ -179,7 +182,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                   <input
                     type={field.type}
                     id={field.name}
-                    value={value}
+                    value={value == null ? '' : String(value)}
                     onChange={(e) => {
                       const val = field.type === 'number' ? Number(e.target.value) : e.target.value;
                       onChange(val);

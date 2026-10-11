@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Trash2, Plus, User } from 'lucide-react';
 import { toast } from '../../../components/ui/Toast/toast.store';
@@ -7,6 +8,7 @@ import { ApiResponse } from '../../../domain/dto/auth.dto';
 import { ConfirmDialog } from '../../../components/ui/Dialog/ConfirmDialog';
 import { Modal } from '../../../components/ui/Modal/Modal';
 import { DynamicForm, FormField } from '../../../components/form/DynamicForm';
+import { getApiErrorMessage } from '../../../core/utils/error';
 
 interface UserDto {
   id: number;
@@ -59,6 +61,7 @@ const usersApi = new UsersApi();
 const rolesListApi = new RolesListApi();
 
 export const UserRolesPage: React.FC = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -86,10 +89,10 @@ export const UserRolesPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-roles', selectedUserId] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Role added to user');
+      toast.success(t('userRoles.roleAddedToUser'));
       setShowAddModal(false);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to add role'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('userRoles.failedToAddRole'))),
   });
 
   const removeMutation = useMutation({
@@ -98,10 +101,10 @@ export const UserRolesPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-roles', selectedUserId] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Role removed from user');
+      toast.success(t('userRoles.roleRemovedFromUser'));
       setRemoveTarget(null);
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message || err.message || 'Failed to remove role'),
+    onError: (error: unknown) => toast.error(getApiErrorMessage(error, t('userRoles.failedToRemoveRole'))),
   });
 
   const assignedIds = new Set(userRoles.map(r => r.id));
@@ -110,7 +113,7 @@ export const UserRolesPage: React.FC = () => {
   const addFields: FormField[] = [
     {
       name: 'roleId',
-      label: 'Role',
+      label: t('common.role'),
       type: 'select',
       required: true,
       options: availableRoles.map(r => ({ label: r.name, value: r.id })),
@@ -122,8 +125,8 @@ export const UserRolesPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Roles</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Assign roles to users</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('userRoles.userRoles')}</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('userRoles.assignRolesToUsers')}</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -131,7 +134,7 @@ export const UserRolesPage: React.FC = () => {
         <div className="w-full lg:w-80 shrink-0">
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Select User</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t('userRoles.selectUser')}</h3>
             </div>
             <div className="divide-y divide-gray-100 dark:divide-gray-700/50 max-h-[500px] overflow-y-auto">
               {users.map(user => (
@@ -156,7 +159,7 @@ export const UserRolesPage: React.FC = () => {
                 </button>
               ))}
               {users.length === 0 && (
-                <p className="px-4 py-6 text-sm text-gray-400 text-center">No users found</p>
+                <p className="px-4 py-6 text-sm text-gray-400 text-center">{t('userRoles.noUsersFound')}</p>
               )}
             </div>
           </div>
@@ -167,7 +170,7 @@ export const UserRolesPage: React.FC = () => {
           {selectedUserId === null ? (
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center">
               <User className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-              <p className="text-gray-500 dark:text-gray-400">Select a user to manage their roles</p>
+              <p className="text-gray-500 dark:text-gray-400">{t('userRoles.selectAUserToManageTheirRoles')}</p>
             </div>
           ) : (
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
@@ -186,9 +189,9 @@ export const UserRolesPage: React.FC = () => {
               </div>
 
               {loadingRoles ? (
-                <div className="p-8 text-center text-gray-400">Loading...</div>
+                <div className="p-8 text-center text-gray-400">{t('common.loading')}</div>
               ) : userRoles.length === 0 ? (
-                <div className="p-8 text-center text-gray-400">No roles assigned</div>
+                <div className="p-8 text-center text-gray-400">{t('userRoles.noRolesAssigned')}</div>
               ) : (
                 <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
                   {userRoles.map(role => (
@@ -200,7 +203,7 @@ export const UserRolesPage: React.FC = () => {
                       <button
                         onClick={() => setRemoveTarget({ userId: selectedUserId, roleId: role.id, name: role.name })}
                         className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                        title="Remove"
+                        title={t('common.remove')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -213,11 +216,11 @@ export const UserRolesPage: React.FC = () => {
         </div>
       </div>
 
-      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add Role to User" size="md">
+      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title={t('userRoles.addRoleToUser')} size="md">
         <DynamicForm
           fields={addFields}
           onSubmit={(data) => addMutation.mutate({ userId: selectedUserId!, roleId: Number(data.roleId) })}
-          submitLabel="Add Role"
+          submitLabel={t('userRoles.addRole')}
           onCancel={() => setShowAddModal(false)}
           isLoading={addMutation.isPending}
         />
@@ -227,9 +230,9 @@ export const UserRolesPage: React.FC = () => {
         isOpen={removeTarget !== null}
         onClose={() => setRemoveTarget(null)}
         onConfirm={() => removeTarget && removeMutation.mutate({ userId: removeTarget.userId, roleId: removeTarget.roleId })}
-        title="Remove Role"
+        title={t('userRoles.removeRole')}
         message={`Remove "${removeTarget?.name}" from this user?`}
-        confirmText="Remove"
+        confirmText={t('common.remove')}
         variant="danger"
       />
     </div>

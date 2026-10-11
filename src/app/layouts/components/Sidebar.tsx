@@ -1,39 +1,62 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronDown, ChevronRight, X, Command } from 'lucide-react';
-import * as Icons from 'lucide-react';
+import {
+  Languages,
+  ChevronDown, ChevronRight, X, Command,
+  LayoutDashboard, Users, Shield, ShieldCheck, Key, UserCheck, Settings, Sliders,
+  FileText, BarChart3, Activity, Home, Package, ShoppingCart, TrendingUp, Bell,
+  Calendar, MessageSquare, User, Menu as MenuIcon, Flag, Building2, History,
+  Receipt, Circle,
+  Server,
+  type LucideIcon,
+} from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { menuTitleKey } from './menuTitleKey';
 import { menuApi } from '../../../core/api/services/menu.api';
 import { MenuItem } from '../../../domain/models/menu.model';
 import { useAuthStore } from '../../../features/auth/store/auth.store';
 import { useSiteSettingsStore } from '../../../core/stores/site-settings.store';
 import { AppConfig } from '../../../core/config/app.config';
 
-const iconMap: Record<string, string> = {
-  dashboard: 'LayoutDashboard',
-  users: 'Users',
-  roles: 'Shield',
-  rolepermissions: 'ShieldCheck',
-  'role-permissions': 'ShieldCheck',
-  permissions: 'Key',
-  'user-roles': 'UserCheck',
-  settings: 'Settings',
-  sliders: 'Sliders',
-  reports: 'FileText',
-  'chart-bar': 'BarChart3',
-  activity: 'Activity',
-  home: 'Home',
-  products: 'Package',
-  orders: 'ShoppingCart',
-  analytics: 'TrendingUp',
-  notifications: 'Bell',
-  calendar: 'Calendar',
-  messages: 'MessageSquare',
-  profile: 'User',
-  preferences: 'Sliders',
-  menu: 'Menu',
-  flag: 'Flag',
-  package: 'Package',
+// Maps the icon NAME stored on a server-side menu item to a component.
+//
+// This deliberately holds components, not strings. It was previously a name->name map resolved
+// against `import * as Icons from 'lucide-react'`, and a namespace import defeats tree-shaking
+// entirely -- all ~1400 icons were bundled, which was the single largest thing in the main chunk.
+// Listing them explicitly means only these are shipped. An unlisted name falls back to a neutral
+// icon rather than rendering nothing, so a new menu entry is still visible before its icon is added.
+const iconMap: Record<string, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  users: Users,
+  roles: Shield,
+  rolepermissions: ShieldCheck,
+  'role-permissions': ShieldCheck,
+  permissions: Key,
+  'user-roles': UserCheck,
+  settings: Settings,
+  sliders: Sliders,
+  reports: FileText,
+  'chart-bar': BarChart3,
+  activity: Activity,
+  shield: Shield,
+  server: Server,
+  home: Home,
+  products: Package,
+  orders: ShoppingCart,
+  analytics: TrendingUp,
+  notifications: Bell,
+  calendar: Calendar,
+  messages: MessageSquare,
+  profile: User,
+  preferences: Sliders,
+  menu: MenuIcon,
+  flag: Flag,
+  package: Package,
+  building2: Building2,
+  history: History,
+  receipt: Receipt,
+  languages: Languages,
 };
 
 interface SidebarProps {
@@ -42,6 +65,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const { tokenPayload } = useAuthStore();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -58,6 +82,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     gcTime: 10 * 60 * 1000,
   });
 
+  // Open the group that contains the current route so the active page is visible on load and
+  // after navigation (e.g. from the command palette); other groups keep the user's own toggles.
+  useEffect(() => {
+    const owners = menuItems
+      .filter((item) => item.children?.some((c) => c.url && location.pathname.startsWith(c.url)))
+      .map((item) => item.title);
+    if (owners.length === 0) return;
+    setExpandedItems((prev) => Array.from(new Set([...prev, ...owners])));
+  }, [menuItems, location.pathname]);
+
   const toggleExpand = (title: string) => {
     setExpandedItems((prev) =>
       prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title]
@@ -66,9 +100,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const getIcon = (iconName?: string | null) => {
     if (!iconName) return null;
-    const mapped = iconMap[iconName.toLowerCase()] || iconName;
-    const Icon = (Icons as any)[mapped];
-    return Icon ? <Icon className="w-5 h-5" /> : null;
+    const Icon = iconMap[iconName.toLowerCase()] ?? Circle;
+    return <Icon className="w-5 h-5" />;
   };
 
   const renderMenuItem = (item: MenuItem, depth = 0) => {
@@ -90,7 +123,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           >
             <div className="flex items-center gap-3">
               {getIcon(item.icon)}
-              <span>{item.title}</span>
+              <span>{t(menuTitleKey(item.title), { defaultValue: item.title })}</span>
             </div>
             {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
@@ -118,7 +151,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         style={{ paddingLeft: `${1 + depth * 0.75}rem` }}
       >
         {getIcon(item.icon)}
-        <span>{item.title}</span>
+        <span>{t(menuTitleKey(item.title), { defaultValue: item.title })}</span>
       </Link>
     );
   };
@@ -139,6 +172,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     <>
       {isOpen && (
         <div
+          role="presentation"
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
           onClick={onClose}
         />

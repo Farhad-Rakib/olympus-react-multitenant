@@ -12,9 +12,9 @@ export interface IBaseRepository {
 }
 
 let isRefreshing = false;
-let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) prom.reject(error);
     else prom.resolve(token!);
@@ -139,13 +139,15 @@ export class BaseRepository implements IBaseRepository {
     }
   }
 
+  // The platform-admin "acting as" tenant wins over the home tenant. Read from storage rather
+  // than the store to avoid an import cycle (the auth store imports the API services).
   private getTenantSlug(): string | null {
     const storage = AppConfig.auth.storageType === 'localStorage' ? localStorage : sessionStorage;
     const raw = storage.getItem(AppConfig.auth.tokenKey);
     if (!raw) return null;
     try {
       const parsed = JSON.parse(raw);
-      return parsed?.state?.tenantSlug || null;
+      return parsed?.state?.actingTenantSlug || parsed?.state?.tenantSlug || null;
     } catch {
       return null;
     }
@@ -191,6 +193,23 @@ export class BaseRepository implements IBaseRepository {
 
   private handleAuthError(): void {
     const storage = AppConfig.auth.storageType === 'localStorage' ? localStorage : sessionStorage;
+
+    // An impersonation token has no refresh token, so its expiry lands here. Fall back to the
+    // support user's own session rather than throwing them out entirely.
+    try {
+      const raw = storage.getItem(AppConfig.auth.tokenKey);
+      const parsed = raw ? JSON.parse(raw) : null;
+      const original = parsed?.state?.impersonation?.original;
+      if (original?.accessToken) {
+        parsed.state = { ...parsed.state, ...original, impersonation: null, isAuthenticated: true };
+        storage.setItem(AppConfig.auth.tokenKey, JSON.stringify(parsed));
+        window.location.href = '/dashboard';
+        return;
+      }
+    } catch {
+      // fall through to the normal logout path
+    }
+
     storage.removeItem(AppConfig.auth.tokenKey);
     if (window.location.pathname !== AppConfig.auth.loginPath) {
       window.location.href = AppConfig.auth.loginPath;
@@ -206,6 +225,14 @@ export class BaseRepository implements IBaseRepository {
 
     if (config?.params) {
       axiosConfig.params = config.params;
+    }
+
+    if (config?.responseType) {
+      axiosConfig.responseType = config.responseType;
+    }
+
+    if (config?.onUploadProgress) {
+      axiosConfig.onUploadProgress = config.onUploadProgress;
     }
 
     if (config?.headers || config?.contentType) {

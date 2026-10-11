@@ -11,7 +11,7 @@ interface FormDrawerProps {
   title: string;
   description?: string;
   fields: FormField[];
-  onSubmit: (data: Record<string, any>) => void | Promise<void>;
+  onSubmit: (data: Record<string, unknown>) => void | Promise<void>;
   submitLabel?: string;
   isLoading?: boolean;
   position?: DrawerPosition;
@@ -66,6 +66,7 @@ export const FormDrawer: React.FC<FormDrawerProps> = ({
     <>
       {isOpen && (
         <div
+          role="presentation"
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] transition-opacity"
           onClick={onClose}
         />

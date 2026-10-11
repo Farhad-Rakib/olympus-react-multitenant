@@ -1,11 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { Menu, LogOut, User, Sun, Moon, Bell, Check, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../../features/auth/store/auth.store';
 import { useThemeStore } from '../../../core/stores/theme.store';
 import { useNotificationStore, Notification } from '../../../core/stores/notification.store';
 import { userApi } from '../../../core/api/services/user.api';
+import { TenantSwitcher } from './TenantSwitcher';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { CacheClearButton } from './CacheClearButton';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -34,10 +38,14 @@ const NotificationItem: React.FC<{
   onRemove: (id: string) => void;
 }> = ({ n, onRead, onRemove }) => (
   <div
-    className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer ${
+    role="button"
+    tabIndex={0}
+    aria-label={n.read ? n.title : `${n.title} (unread)`}
+    className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
       !n.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
     }`}
     onClick={() => !n.read && onRead(n.id)}
+    onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !n.read) { e.preventDefault(); onRead(n.id); } }}
   >
     <div className={`w-2 h-2 mt-2 rounded-full shrink-0 ${typeStyles[n.type]}`} />
     <div className="flex-1 min-w-0">
@@ -57,8 +65,9 @@ const NotificationItem: React.FC<{
 );
 
 export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isAuthenticated, tokenPayload, logout } = useAuthStore();
+  const { isAuthenticated, tokenPayload, logout, impersonation, endImpersonation } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
   const { notifications, unreadCount, markAsRead, markAllAsRead, removeNotification } = useNotificationStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -74,7 +83,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   });
 
   const displayName = profile?.fullName || tokenPayload?.name || tokenPayload?.email || 'User';
-  const displayRole = profile?.roles?.[0] || tokenPayload?.role || tokenPayload?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || '';
+  // The long key is the WS-Federation role claim some tokens carry instead of "role". Indexed
+  // claims are typed unknown, so the result is coerced rather than assumed to be a string.
+  const roleClaim = tokenPayload?.role ?? tokenPayload?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+  const displayRole = profile?.roles?.[0] || (typeof roleClaim === 'string' ? roleClaim : '');
   const initials = displayName
     .split(' ')
     .map((p: string) => p[0])
@@ -92,6 +104,12 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   }, []);
 
   const handleLogout = async () => {
+    // "Logout" while viewing as someone else means "back to me", not "sign me out".
+    if (impersonation) {
+      endImpersonation();
+      window.location.assign('/users');
+      return;
+    }
     await logout();
     navigate('/login');
   };
@@ -109,13 +127,16 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         <div className="flex-1 lg:ml-0 ml-4" />
 
         <div className="flex items-center gap-1">
+          <TenantSwitcher />
+          <LanguageSwitcher />
           <button
             onClick={toggleTheme}
             className="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
           >
             {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
+          <CacheClearButton />
 
           <div ref={notifRef} className="relative">
             <button
@@ -133,19 +154,19 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t('header.notifications')}</h3>
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllAsRead}
                       className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      <Check className="w-3 h-3" /> Mark all read
+                      <Check className="w-3 h-3" /> {t('header.markAllRead')}
                     </button>
                   )}
                 </div>
                 <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700/50">
                   {notifications.length === 0 ? (
-                    <p className="px-4 py-8 text-sm text-center text-gray-400">No notifications</p>
+                    <p className="px-4 py-8 text-sm text-center text-gray-400">{t('header.noNotifications')}</p>
                   ) : (
                     notifications.map((n) => (
                       <NotificationItem key={n.id} n={n} onRead={markAsRead} onRemove={removeNotification} />
@@ -180,14 +201,14 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                   onClick={() => { setShowUserMenu(false); navigate('/profile'); }}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <User className="w-4 h-4" /> Profile
+                  <User className="w-4 h-4" /> {t('header.profile')}
                 </button>
                 <hr className="my-1 border-gray-200 dark:border-gray-700" />
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <LogOut className="w-4 h-4" /> Logout
+                  <LogOut className="w-4 h-4" /> {t('header.logout')}
                 </button>
               </div>
             )}
